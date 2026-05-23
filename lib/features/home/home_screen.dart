@@ -1,4 +1,6 @@
 import 'package:dukabase/features/customers/screens/customer_list_screen.dart';
+import 'package:dukabase/features/dashboard/screens/owner_dashboard_screen.dart';
+import 'package:dukabase/features/dashboard/screens/staff_dashboard_screen.dart';
 import 'package:dukabase/features/expenses/screens/expense_list_screen.dart';
 import 'package:dukabase/features/payment_methods/screens/payment_method_list_screen.dart';
 import 'package:dukabase/features/sales/screens/new_sale_screen.dart';
@@ -54,6 +56,24 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+            if (authProvider.currentUser?.role == UserRole.owner)
+              ListTile(
+                leading: const Icon(Icons.dashboard),
+                title: const Text('Owner Dashboard'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToOwnerDashboard(context, shopProvider.currentShop);
+                },
+              ),
+            if (authProvider.currentUser?.role == UserRole.staff)
+              ListTile(
+                leading: const Icon(Icons.dashboard),
+                title: const Text('Staff Dashboard'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToStaffDashboard(context, shopProvider.currentShop);
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.store),
               title: const Text('My Shops'),
@@ -159,6 +179,36 @@ class HomeScreen extends StatelessWidget {
               },
             )
           : null,
+    );
+  }
+
+  void _navigateToOwnerDashboard(BuildContext context, ShopModel? currentShop) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OwnerDashboardScreen(shop: currentShop),
+      ),
+    );
+  }
+
+  void _navigateToStaffDashboard(BuildContext context, ShopModel? currentShop) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StaffDashboardScreen(shop: currentShop),
+      ),
     );
   }
 

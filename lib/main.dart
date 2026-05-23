@@ -19,6 +19,7 @@ import 'features/payments/providers/payment_provider.dart';
 import 'features/payment_methods/providers/payment_method_provider.dart'; 
 import 'features/expenses/providers/expense_provider.dart';
 import 'features/stock_adjustments/providers/stock_adjustment_provider.dart';
+import 'features/dashboard/providers/dashboard_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +50,7 @@ class DukaBaseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PaymentMethodProvider()),
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => StockAdjustmentProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
       ],
       child: MaterialApp(
         title: 'DukaBase',
