@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/sale_provider.dart';
 import '../../customers/providers/customer_provider.dart';
 import '../../products/providers/product_provider.dart';
@@ -18,61 +18,89 @@ class NewSaleScreen extends StatefulWidget {
 
 class _NewSaleScreenState extends State<NewSaleScreen> {
   final List<CartItem> _cart = [];
-  String? _selectedCustomerId; // null = walk‑in
-  String? _selectedPaymentMethodId; // placeholder
+  String? _selectedCustomerId;
+  String? _selectedPaymentMethodId = 'cash'; // placeholder
   final TextEditingController _paidController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Load customers and products
-    Provider.of<CustomerProvider>(context, listen: false)
-        .loadCustomers(widget.shop.id);
-    Provider.of<ProductProvider>(context, listen: false)
-        .loadProducts(widget.shop.id);
+    Provider.of<CustomerProvider>(
+      context,
+      listen: false,
+    ).loadCustomers(widget.shop.id);
+    Provider.of<ProductProvider>(
+      context,
+      listen: false,
+    ).loadProducts(widget.shop.id);
   }
 
   double get _totalAmount => _cart.fold(0, (sum, item) => sum + item.subtotal);
 
   Future<void> _addProduct() async {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<ProductProvider>(
+      context,
+      listen: false,
+    );
     if (productProvider.products.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No products available. Create a product first.')),
-      );
+      _showSnackBar('No products available. Create a product first.');
       return;
     }
 
-    // Show product selection, then batch selection for that product
+    // Step 1: pick product
     final product = await _showProductPicker(productProvider.products);
-    if (product == null) return;
+    if (product == null) {
+      print('Product selection cancelled');
+      return;
+    }
+    print('Selected product: ${product.name} (${product.id})');
 
-    // Load batches for this product
+    // Step 2: get available batches for this product
     final batches = await _getBatchesForProduct(product.id);
     if (batches.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No batches available for this product. Purchase stock first.')),
+      _showSnackBar(
+        'No batches available for ${product.name}. Purchase stock first.',
       );
       return;
     }
+    print('Found ${batches.length} batches');
 
-    final batch = await _showBatchPicker(batches);
-    if (batch == null) return;
+    // Step 3: select batch (or auto-select if only one)
+    BatchModel? batch;
+    if (batches.length == 1) {
+      batch = batches.first;
+      print('Only one batch, auto-selected: ${batch.batchCode}');
+    } else {
+      batch = await _showBatchPicker(batches);
+      if (batch == null) {
+        print('Batch selection cancelled');
+        return;
+      }
+      print('Selected batch: ${batch.batchCode}');
+    }
 
+    // Step 4: enter quantity
     final quantity = await _showQuantityDialog(batch.quantity);
-    if (quantity == null || quantity <= 0) return;
+    if (quantity == null || quantity <= 0) {
+      print('Invalid quantity or cancelled');
+      return;
+    }
+    print('Quantity: $quantity');
 
-    final sellingPrice = batch.sellingPrice; // can allow override
+    // Step 5: add to cart
     setState(() {
-      _cart.add(CartItem(
-        productId: product.id,
-        productName: product.name,
-        batchId: batch.id,
-        batchCode: batch.batchCode,
-        quantity: quantity,
-        sellingPrice: sellingPrice,
-      ));
+      _cart.add(
+        CartItem(
+          productId: product.id,
+          productName: product.name,
+          batchId: batch!.id,
+          batchCode: batch.batchCode,
+          quantity: quantity,
+          sellingPrice: batch.sellingPrice,
+        ),
+      );
     });
+    _showSnackBar('${product.name} added to cart', isError: false);
   }
 
   Future<ProductModel?> _showProductPicker(List<ProductModel> products) async {
@@ -87,7 +115,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             itemCount: products.length,
             itemBuilder: (_, i) => ListTile(
               title: Text(products[i].name),
-              subtitle: Text('Stock: ${products[i].currentStock} ${products[i].unit}'),
+              subtitle: Text(
+                'Stock: ${products[i].currentStock} ${products[i].unit}',
+              ),
               onTap: () => Navigator.pop(ctx, products[i]),
             ),
           ),
@@ -96,19 +126,37 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
-  Future<List<BatchModel>> _getBatchesForProduct(String productId) async {
-    // Since we don't have a service for batches yet, we'll query directly
-    final snapshot = await FirebaseFirestore.instance
+Future<List<BatchModel>> _getBatchesForProduct(String productId) async {
+  try {
+    print('🔍 Fetching batches for productId: $productId');
+    final batchRef = FirebaseFirestore.instance
         .collection('shops')
         .doc(widget.shop.id)
         .collection('products')
         .doc(productId)
-        .collection('batches')
-        .where('quantity', isGreaterThan: 0)
-        .orderBy('createdAt')
-        .get();
-    return snapshot.docs.map((doc) => BatchModel.fromMap(doc.id, doc.data())).toList();
+        .collection('batches');
+    
+    print('📁 Batch reference path: ${batchRef.path}');
+    
+    final snapshot = await batchRef.get();
+    print('📦 Total batches found (no filter): ${snapshot.docs.length}');
+    
+    for (var doc in snapshot.docs) {
+      print('Batch doc: ${doc.id} -> data: ${doc.data()}');
+    }
+    
+    // Now filter with quantity > 0 manually (to avoid Firestore type issues)
+    final batches = snapshot.docs
+        .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
+        .where((batch) => batch.quantity > 0)
+        .toList();
+    print('✅ Batches with quantity > 0: ${batches.length}');
+    return batches;
+  } catch (e) {
+    print('❌ Error fetching batches: $e');
+    return [];
   }
+}
 
   Future<BatchModel?> _showBatchPicker(List<BatchModel> batches) async {
     return showDialog<BatchModel>(
@@ -125,7 +173,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               return ListTile(
                 title: Text('Batch: ${b.batchCode}'),
                 subtitle: Text(
-                  'Qty: ${b.quantity} | Cost: ${b.costPrice} | Sell: ${b.sellingPrice}${b.expiryDate != null ? ' | Expiry: ${b.expiryDate!.toLocal().toString().split(' ')[0]}' : ''}',
+                  'Qty: ${b.quantity} | Sell: ${b.sellingPrice}${b.expiryDate != null ? ' | Expiry: ${b.expiryDate!.toLocal().toString().split(' ')[0]}' : ''}',
                 ),
                 onTap: () => Navigator.pop(ctx, b),
               );
@@ -145,7 +193,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: InputDecoration(labelText: 'Max: $maxQty'),
+          decoration: InputDecoration(
+            labelText: 'Max: $maxQty',
+            hintText: 'Enter quantity',
+          ),
         ),
         actions: [
           TextButton(
@@ -158,8 +209,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               if (qty != null && qty > 0 && qty <= maxQty) {
                 Navigator.pop(ctx, qty);
               } else {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Invalid quantity')),
+                _showSnackBar(
+                  'Invalid quantity. Must be between 1 and $maxQty',
                 );
               }
             },
@@ -170,18 +221,23 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
+  void _showSnackBar(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
   Future<void> _saveSale() async {
     if (_cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one item')),
-      );
+      _showSnackBar('Add at least one item');
       return;
     }
     final paid = double.tryParse(_paidController.text);
     if (paid == null || paid < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter valid paid amount')),
-      );
+      _showSnackBar('Enter valid paid amount');
       return;
     }
 
@@ -189,25 +245,25 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final success = await saleProvider.recordSale(
       shopId: widget.shop.id,
       customerId: _selectedCustomerId,
-      paymentMethodId: _selectedPaymentMethodId ?? 'cash', // fallback
+      paymentMethodId: _selectedPaymentMethodId!,
       paidAmount: paid,
-      items: _cart.map((item) => (
-        batchId: item.batchId,
-        productId: item.productId,
-        quantity: item.quantity,
-        sellingPrice: item.sellingPrice,
-      )).toList(),
+      items: _cart
+          .map(
+            (item) => (
+              batchId: item.batchId,
+              productId: item.productId,
+              quantity: item.quantity,
+              sellingPrice: item.sellingPrice,
+            ),
+          )
+          .toList(),
     );
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sale recorded'), backgroundColor: Colors.green),
-      );
+      _showSnackBar('Sale recorded successfully', isError: false);
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(saleProvider.error ?? 'Failed'), backgroundColor: Colors.red),
-      );
+      _showSnackBar(saleProvider.error ?? 'Failed to record sale');
       saleProvider.clearError();
     }
   }
@@ -223,22 +279,28 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Customer selection
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Customer'),
                   value: _selectedCustomerId,
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Walk‑in Customer')),
-                    ...customerProvider.customers.map((c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Text('${c.name} (${c.phone})'),
-                    )),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Walk‑in Customer'),
+                    ),
+                    ...customerProvider.customers.map(
+                      (c) => DropdownMenuItem(
+                        value: c.id,
+                        child: Text('${c.name} (${c.phone})'),
+                      ),
+                    ),
                   ],
                   onChanged: (val) => setState(() => _selectedCustomerId = val),
                 ),
                 const SizedBox(height: 16),
-                // Cart
-                const Text('Cart', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Cart',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 ..._cart.asMap().entries.map((entry) {
                   int idx = entry.key;
@@ -256,15 +318,20 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     ),
                   );
                 }),
-                if (_cart.isEmpty) const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('No items. Tap + to add product.'),
+                if (_cart.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('No items. Tap + to add product.'),
+                  ),
+                const SizedBox(height: 16),
+                Text(
+                  'Total: ${_totalAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                // Total
-                Text('Total: ${_totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                // Paid amount
                 TextField(
                   controller: _paidController,
                   decoration: const InputDecoration(labelText: 'Amount Paid'),
@@ -272,7 +339,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 8),
-                Text('Change: ${(double.tryParse(_paidController.text) ?? 0) - _totalAmount >= 0 ? ((double.tryParse(_paidController.text) ?? 0) - _totalAmount).toStringAsFixed(2) : '0.00'}'),
+                Text(
+                  'Change: ${(double.tryParse(_paidController.text) ?? 0) - _totalAmount >= 0 ? ((double.tryParse(_paidController.text) ?? 0) - _totalAmount).toStringAsFixed(2) : '0.00'}',
+                ),
               ],
             ),
           ),
@@ -285,7 +354,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     onPressed: _addProduct,
                     icon: const Icon(Icons.add),
                     label: const Text('Add Product'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
