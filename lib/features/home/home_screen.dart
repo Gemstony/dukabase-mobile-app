@@ -2,6 +2,7 @@ import 'package:dukabase/features/customers/screens/customer_list_screen.dart';
 import 'package:dukabase/features/expenses/screens/expense_list_screen.dart';
 import 'package:dukabase/features/payment_methods/screens/payment_method_list_screen.dart';
 import 'package:dukabase/features/sales/screens/new_sale_screen.dart';
+import 'package:dukabase/features/stock_adjustments/screens/stock_adjustment_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../shops/providers/shop_provider.dart';
@@ -118,6 +119,16 @@ class HomeScreen extends StatelessWidget {
                 _navigateToExpenses(context, shopProvider.currentShop);
               },
             ),
+
+            ListTile(
+              leading: const Icon(Icons.inventory),
+              title: const Text('Stock Adjustments'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToStockAdjustments(context, shopProvider.currentShop);
+              },
+            ),
+
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -241,6 +252,24 @@ class HomeScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ExpenseListScreen(shop: currentShop)),
+    );
+  }
+
+  void _navigateToStockAdjustments(
+    BuildContext context,
+    ShopModel? currentShop,
+  ) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StockAdjustmentListScreen(shop: currentShop),
+      ),
     );
   }
 
