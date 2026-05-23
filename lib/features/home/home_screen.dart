@@ -1,4 +1,5 @@
 import 'package:dukabase/features/customers/screens/customer_list_screen.dart';
+import 'package:dukabase/features/payment_methods/screens/payment_method_list_screen.dart';
 import 'package:dukabase/features/sales/screens/new_sale_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -99,6 +100,14 @@ class HomeScreen extends StatelessWidget {
                 _navigateToCustomers(context, shopProvider.currentShop);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.payment),
+              title: const Text('Payment Methods'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToPaymentMethods(context, shopProvider.currentShop);
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -194,6 +203,21 @@ class HomeScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => CustomerListScreen(shop: currentShop)),
+    );
+  }
+
+  void _navigateToPaymentMethods(BuildContext context, ShopModel? currentShop) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentMethodListScreen(shop: currentShop),
+      ),
     );
   }
 
