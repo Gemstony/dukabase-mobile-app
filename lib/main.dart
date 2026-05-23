@@ -13,12 +13,12 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'features/products/providers/product_provider.dart';
 import 'features/suppliers/providers/supplier_provider.dart';
 import 'features/purchases/providers/purchase_provider.dart';
+import 'features/customers/providers/customer_provider.dart';
+import 'features/sales/providers/sale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
@@ -39,6 +39,8 @@ class DukaBaseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => SupplierProvider()),
         ChangeNotifierProvider(create: (_) => PurchaseProvider()),
+        ChangeNotifierProvider(create: (_) => CustomerProvider()),
+        ChangeNotifierProvider(create: (_) => SaleProvider()),
       ],
       child: MaterialApp(
         title: 'DukaBase',
