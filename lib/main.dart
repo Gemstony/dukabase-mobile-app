@@ -10,6 +10,9 @@ import 'features/auth/screens/register_screen.dart';
 import 'features/home/home_screen.dart';
 import 'admin/admin_home.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'features/products/providers/product_provider.dart';
+import 'features/suppliers/providers/supplier_provider.dart';
+import 'features/purchases/providers/purchase_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +36,9 @@ class DukaBaseApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ShopProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => SupplierProvider()),
+        ChangeNotifierProvider(create: (_) => PurchaseProvider()),
       ],
       child: MaterialApp(
         title: 'DukaBase',
