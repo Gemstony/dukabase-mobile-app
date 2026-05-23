@@ -14,17 +14,19 @@ class PurchaseService {
     required double totalAmount,
     required double paidAmount,
     String? paymentMethodId,
-    required List<({
-      String productId,
-      String batchCode,
-      double quantity,
-      double costPrice,
-      double sellingPrice,
-      DateTime? expiryDate,
-    })> items,
+    required List<
+      ({
+        String productId,
+        String batchCode,
+        double quantity,
+        double costPrice,
+        double sellingPrice,
+        DateTime? expiryDate,
+      })
+    >
+    items,
   }) async {
     try {
-      // Use a batch write to ensure atomicity
       final batch = _firestore.batch();
       final now = DateTime.now();
       final purchaseRef = _firestore
@@ -44,6 +46,19 @@ class PurchaseService {
         createdAt: now,
       );
       batch.set(purchaseRef, purchase.toMap());
+
+      // Update payment method balance (DECREASE by paidAmount)
+      if (paidAmount > 0 && paymentMethodId != null) {
+        final paymentMethodRef = _firestore
+            .collection('shops')
+            .doc(shopId)
+            .collection('paymentMethods')
+            .doc(paymentMethodId);
+        batch.update(paymentMethodRef, {
+          'currentBalance': FieldValue.increment(-paidAmount),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
 
       // For each item, create a batch and update product stock
       for (var item in items) {
@@ -80,9 +95,7 @@ class PurchaseService {
         });
 
         // Add purchase item document
-        final purchaseItemRef = purchaseRef
-            .collection('items')
-            .doc();
+        final purchaseItemRef = purchaseRef.collection('items').doc();
         final purchaseItem = PurchaseItemModel(
           productId: item.productId,
           batchId: batchRef.id,
@@ -132,8 +145,10 @@ class PurchaseService {
         .collection('purchases')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PurchaseModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PurchaseModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 }

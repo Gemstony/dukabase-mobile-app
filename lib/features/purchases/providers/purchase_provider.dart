@@ -32,7 +32,7 @@ class PurchaseProvider extends ChangeNotifier {
     required String supplierId,
     required double totalAmount,
     required double paidAmount,
-    String? paymentMethodId,
+    required String paymentMethodId,
     required List<({
       String productId,
       String batchCode,

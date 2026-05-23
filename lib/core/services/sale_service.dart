@@ -44,6 +44,17 @@ class SaleService {
       );
       batch.set(saleRef, sale.toMap());
 
+      // Update payment method balance (INCREASE by paidAmount)
+      final paymentMethodRef = _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('paymentMethods')
+          .doc(paymentMethodId);
+      batch.update(paymentMethodRef, {
+        'currentBalance': FieldValue.increment(paidAmount),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
       // For each item, reduce batch quantity and update product stock
       for (var item in items) {
         // Reduce batch quantity

@@ -1,3 +1,4 @@
+import 'package:dukabase/features/payment_methods/providers/payment_method_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/purchase_provider.dart';
@@ -17,8 +18,8 @@ class PurchaseScreen extends StatefulWidget {
 
 class _PurchaseScreenState extends State<PurchaseScreen> {
   final _formKey = GlobalKey<FormState>();
+  String? _selectedPaymentMethodId;
   SupplierModel? _selectedSupplier;
-  String? _paymentMethodId; // placeholder – you can implement payment methods later
   double _paidAmount = 0;
 
   final List<PurchaseItem> _items = [];
@@ -28,19 +29,33 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   void initState() {
     super.initState();
     // Load suppliers and products
-    Provider.of<SupplierProvider>(context, listen: false)
-        .loadSuppliers(widget.shop.id);
-    Provider.of<ProductProvider>(context, listen: false)
-        .loadProducts(widget.shop.id);
+    Provider.of<SupplierProvider>(
+      context,
+      listen: false,
+    ).loadSuppliers(widget.shop.id);
+    Provider.of<ProductProvider>(
+      context,
+      listen: false,
+    ).loadProducts(widget.shop.id);
+
+    Provider.of<PaymentMethodProvider>(
+      context,
+      listen: false,
+    ).loadPaymentMethods(widget.shop.id);
   }
 
   double get _totalAmount => _items.fold(0, (sum, item) => sum + item.subtotal);
 
   Future<void> _addItem() async {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<ProductProvider>(
+      context,
+      listen: false,
+    );
     if (productProvider.products.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No products available. Create a product first.')),
+        const SnackBar(
+          content: Text('No products available. Create a product first.'),
+        ),
       );
       return;
     }
@@ -48,9 +63,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AddPurchaseItemScreen(
-          products: productProvider.products,
-        ),
+        builder: (_) =>
+            AddPurchaseItemScreen(products: productProvider.products),
       ),
     );
     if (result != null && result is PurchaseItem) {
@@ -62,44 +76,57 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   Future<void> _savePurchase() async {
     if (_selectedSupplier == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a supplier')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a supplier')));
       return;
     }
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one item')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Add at least one item')));
       return;
     }
     if (!_formKey.currentState!.validate()) return;
 
-    final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+    final purchaseProvider = Provider.of<PurchaseProvider>(
+      context,
+      listen: false,
+    );
     final success = await purchaseProvider.recordPurchase(
       shopId: widget.shop.id,
       supplierId: _selectedSupplier!.id,
       totalAmount: _totalAmount,
       paidAmount: _paidAmount,
-      paymentMethodId: _paymentMethodId,
-      items: _items.map((item) => (
-        productId: item.productId,
-        batchCode: item.batchCode,
-        quantity: item.quantity,
-        costPrice: item.costPrice,
-        sellingPrice: item.sellingPrice,
-        expiryDate: item.expiryDate,
-      )).toList(),
+      paymentMethodId: _selectedPaymentMethodId!,
+      items: _items
+          .map(
+            (item) => (
+              productId: item.productId,
+              batchCode: item.batchCode,
+              quantity: item.quantity,
+              costPrice: item.costPrice,
+              sellingPrice: item.sellingPrice,
+              expiryDate: item.expiryDate,
+            ),
+          )
+          .toList(),
     );
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Purchase recorded'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Purchase recorded'),
+          backgroundColor: Colors.green,
+        ),
       );
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(purchaseProvider.error ?? 'Failed'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(purchaseProvider.error ?? 'Failed'),
+          backgroundColor: Colors.red,
+        ),
       );
       purchaseProvider.clearError();
     }
@@ -109,6 +136,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   Widget build(BuildContext context) {
     final supplierProvider = Provider.of<SupplierProvider>(context);
     final productProvider = Provider.of<ProductProvider>(context);
+    final paymentProvider = Provider.of<PaymentMethodProvider>(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('New Purchase')),
@@ -126,12 +154,35 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                     items: supplierProvider.suppliers.map((s) {
                       return DropdownMenuItem(value: s, child: Text(s.name));
                     }).toList(),
-                    onChanged: (value) => setState(() => _selectedSupplier = value),
+                    onChanged: (value) =>
+                        setState(() => _selectedSupplier = value),
                     validator: (v) => v == null ? 'Select supplier' : null,
                   ),
                   const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      labelText: 'Payment Method *',
+                    ),
+                    value: _selectedPaymentMethodId,
+                    items: paymentProvider.methods.map((method) {
+                      return DropdownMenuItem(
+                        value: method.id,
+                        child: Text(
+                          '${method.name} (Balance: ${method.currentBalance.toStringAsFixed(2)})',
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) =>
+                        setState(() => _selectedPaymentMethodId = val),
+                    validator: (v) =>
+                        v == null ? 'Select payment method' : null,
+                  ),
+                  const SizedBox(height: 16),
                   // Items list
-                  const Text('Items', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Items',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
                   ..._items.asMap().entries.map((entry) {
                     int idx = entry.key;
@@ -158,13 +209,18 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                   // Total amount
                   Text(
                     'Total Amount: ${_totalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   // Paid amount
                   TextFormField(
                     controller: _paidController,
-                    decoration: const InputDecoration(labelText: 'Amount Paid *'),
+                    decoration: const InputDecoration(
+                      labelText: 'Amount Paid *',
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
                       _paidAmount = double.tryParse(value) ?? 0;
@@ -192,7 +248,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                       onPressed: _addItem,
                       icon: const Icon(Icons.add),
                       label: const Text('Add Item'),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -268,15 +326,18 @@ class _AddPurchaseItemScreenState extends State<AddPurchaseItemScreen> {
     if (quantity == null || costPrice == null || sellingPrice == null) return;
     if (_batchCodeController.text.isEmpty) return;
 
-    Navigator.pop(context, PurchaseItem(
-      productId: _selectedProduct!.id,
-      productName: _selectedProduct!.name,
-      batchCode: _batchCodeController.text,
-      quantity: quantity,
-      costPrice: costPrice,
-      sellingPrice: sellingPrice,
-      expiryDate: _expiryDate,
-    ));
+    Navigator.pop(
+      context,
+      PurchaseItem(
+        productId: _selectedProduct!.id,
+        productName: _selectedProduct!.name,
+        batchCode: _batchCodeController.text,
+        quantity: quantity,
+        costPrice: costPrice,
+        sellingPrice: sellingPrice,
+        expiryDate: _expiryDate,
+      ),
+    );
   }
 
   @override

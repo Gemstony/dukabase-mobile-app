@@ -1,3 +1,4 @@
+import 'package:dukabase/features/payment_methods/providers/payment_method_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,9 +18,9 @@ class NewSaleScreen extends StatefulWidget {
 }
 
 class _NewSaleScreenState extends State<NewSaleScreen> {
+  String? _selectedPaymentMethodId;
   final List<CartItem> _cart = [];
   String? _selectedCustomerId;
-  String? _selectedPaymentMethodId = 'cash'; // placeholder
   final TextEditingController _paidController = TextEditingController();
 
   @override
@@ -33,6 +34,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       context,
       listen: false,
     ).loadProducts(widget.shop.id);
+
+    Provider.of<PaymentMethodProvider>(
+      context,
+      listen: false,
+    ).loadPaymentMethods(widget.shop.id);
   }
 
   double get _totalAmount => _cart.fold(0, (sum, item) => sum + item.subtotal);
@@ -126,37 +132,37 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
-Future<List<BatchModel>> _getBatchesForProduct(String productId) async {
-  try {
-    print('🔍 Fetching batches for productId: $productId');
-    final batchRef = FirebaseFirestore.instance
-        .collection('shops')
-        .doc(widget.shop.id)
-        .collection('products')
-        .doc(productId)
-        .collection('batches');
-    
-    print('📁 Batch reference path: ${batchRef.path}');
-    
-    final snapshot = await batchRef.get();
-    print('📦 Total batches found (no filter): ${snapshot.docs.length}');
-    
-    for (var doc in snapshot.docs) {
-      print('Batch doc: ${doc.id} -> data: ${doc.data()}');
+  Future<List<BatchModel>> _getBatchesForProduct(String productId) async {
+    try {
+      print('🔍 Fetching batches for productId: $productId');
+      final batchRef = FirebaseFirestore.instance
+          .collection('shops')
+          .doc(widget.shop.id)
+          .collection('products')
+          .doc(productId)
+          .collection('batches');
+
+      print('📁 Batch reference path: ${batchRef.path}');
+
+      final snapshot = await batchRef.get();
+      print('📦 Total batches found (no filter): ${snapshot.docs.length}');
+
+      for (var doc in snapshot.docs) {
+        print('Batch doc: ${doc.id} -> data: ${doc.data()}');
+      }
+
+      // Now filter with quantity > 0 manually (to avoid Firestore type issues)
+      final batches = snapshot.docs
+          .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
+          .where((batch) => batch.quantity > 0)
+          .toList();
+      print('✅ Batches with quantity > 0: ${batches.length}');
+      return batches;
+    } catch (e) {
+      print('❌ Error fetching batches: $e');
+      return [];
     }
-    
-    // Now filter with quantity > 0 manually (to avoid Firestore type issues)
-    final batches = snapshot.docs
-        .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
-        .where((batch) => batch.quantity > 0)
-        .toList();
-    print('✅ Batches with quantity > 0: ${batches.length}');
-    return batches;
-  } catch (e) {
-    print('❌ Error fetching batches: $e');
-    return [];
   }
-}
 
   Future<BatchModel?> _showBatchPicker(List<BatchModel> batches) async {
     return showDialog<BatchModel>(
@@ -271,6 +277,7 @@ Future<List<BatchModel>> _getBatchesForProduct(String productId) async {
   @override
   Widget build(BuildContext context) {
     final customerProvider = Provider.of<CustomerProvider>(context);
+    final paymentProvider = Provider.of<PaymentMethodProvider>(context);
     return Scaffold(
       appBar: AppBar(title: const Text('New Sale')),
       body: Column(
@@ -323,6 +330,24 @@ Future<List<BatchModel>> _getBatchesForProduct(String productId) async {
                     padding: EdgeInsets.all(16),
                     child: Text('No items. Tap + to add product.'),
                   ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Payment Method *',
+                  ),
+                  value: _selectedPaymentMethodId,
+                  items: paymentProvider.methods.map((method) {
+                    return DropdownMenuItem(
+                      value: method.id,
+                      child: Text(
+                        '${method.name} (Balance: ${method.currentBalance.toStringAsFixed(2)})',
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) =>
+                      setState(() => _selectedPaymentMethodId = val),
+                  validator: (v) => v == null ? 'Select payment method' : null,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Total: ${_totalAmount.toStringAsFixed(2)}',
