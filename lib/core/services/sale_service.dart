@@ -10,17 +10,18 @@ class SaleService {
     required String? customerId,
     required String paymentMethodId,
     required double paidAmount,
-    required List<({
-      String batchId,
-      String productId,
-      double quantity,
-      double sellingPrice,
-    })> items,
+    required List<
+      ({String batchId, String productId, double quantity, double sellingPrice})
+    >
+    items,
   }) async {
     try {
       final batch = _firestore.batch();
       final now = DateTime.now();
-      final totalAmount = items.fold(0.0, (sum, i) => sum + (i.quantity * i.sellingPrice));
+      final totalAmount = items.fold(
+        0.0,
+        (sum, i) => sum + (i.quantity * i.sellingPrice),
+      );
       final change = paidAmount - totalAmount;
       final status = paidAmount >= totalAmount ? 'completed' : 'pending';
 
@@ -108,8 +109,28 @@ class SaleService {
         .collection('sales')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => SaleModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => SaleModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
+  }
+
+  Stream<List<SaleModel>> getSalesForCustomer(
+    String shopId,
+    String customerId,
+  ) {
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('sales')
+        .where('customerId', isEqualTo: customerId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => SaleModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:dukabase/features/customers/screens/customer_list_screen.dart';
 import 'package:dukabase/features/sales/screens/new_sale_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -90,6 +91,14 @@ class HomeScreen extends StatelessWidget {
                 _navigateToNewSale(context, shopProvider.currentShop);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('Customers'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToCustomers(context, shopProvider.currentShop);
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -163,19 +172,30 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _navigateToNewSale(BuildContext context, ShopModel? currentShop) {
-  if (currentShop == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select a shop first')),
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => NewSaleScreen(shop: currentShop)),
     );
-    return;
   }
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => NewSaleScreen(shop: currentShop),
-    ),
-  );
-}
+
+  void _navigateToCustomers(BuildContext context, ShopModel? currentShop) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CustomerListScreen(shop: currentShop)),
+    );
+  }
 
   Widget _buildEmptyState(BuildContext context) {
     final currentUser = Provider.of<AuthProvider>(context).currentUser;

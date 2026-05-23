@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/customer_model.dart';
 
@@ -11,9 +10,11 @@ class CustomerService {
         .doc(shopId)
         .collection('customers')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => CustomerModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => CustomerModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 
   Future<CustomerModel?> createCustomer({
@@ -45,6 +46,24 @@ class CustomerService {
       return customer;
     } catch (e) {
       print('Create customer error: $e');
+      return null;
+    }
+  }
+
+  Future<CustomerModel?> getCustomer(String shopId, String customerId) async {
+    try {
+      final doc = await _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('customers')
+          .doc(customerId)
+          .get();
+      if (doc.exists) {
+        return CustomerModel.fromMap(doc.id, doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      print('Get customer error: $e');
       return null;
     }
   }
