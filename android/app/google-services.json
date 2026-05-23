@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "97967926541",
+    "project_id": "dukabase-ce7ed",
+    "storage_bucket": "dukabase-ce7ed.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:97967926541:android:102bbce0f374f72438d444",
+        "android_client_info": {
+          "package_name": "com.example.dukabase"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhpDYtr9Wxk-K1fnILXYljShDrMt6Vx68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:97967926541:android:63f219a9752cd94f38d444",
+        "android_client_info": {
+          "package_name": "tz.scartech.dukabase"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhpDYtr9Wxk-K1fnILXYljShDrMt6Vx68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
