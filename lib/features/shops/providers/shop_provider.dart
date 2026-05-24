@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/shop_service.dart';
 import '../../../core/models/shop_model.dart';
 
 class ShopProvider extends ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   final ShopService _shopService = ShopService();
   List<ShopModel> _shops = [];
   ShopModel? _currentShop;
@@ -100,5 +103,63 @@ class ShopProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  Future<bool> updateShop({
+    required String shopId,
+    required String name,
+    String? address,
+    String? phone,
+    required String currency,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final shopRef = _firestore.collection('shops').doc(shopId);
+      await shopRef.update({
+        'name': name,
+        'address': address,
+        'phone': phone,
+        'currency': currency,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteShop(String shopId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _firestore.collection('shops').doc(shopId).update({
+        'isActive': false,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<ShopModel?> getShopById(String shopId) async {
+    final doc = await _firestore.collection('shops').doc(shopId).get();
+    if (doc.exists) {
+      return ShopModel.fromMap(doc.id, doc.data()!);
+    }
+    return null;
   }
 }
