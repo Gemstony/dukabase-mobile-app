@@ -43,11 +43,14 @@ dependencies:
   rxdart: ^0.27.7
 
   intl: ^0.20.2
-  
+
   # backup and sharing
   share_plus: ^10.1.4
   path_provider: ^2.1.5
   csv: ^6.0.0
+
+  #restoring backups
+  file_picker: ^10.1.9
   # For web admin UI (optional but useful)
   flutter_spinkit: ^5.2.1
   # The following adds the Cupertino Icons font to your application.

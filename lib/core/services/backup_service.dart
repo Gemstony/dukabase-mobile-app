@@ -156,4 +156,168 @@ class BackupService {
     final rows = [headers, ...data.map((row) => headers.map((h) => row[h]?.toString() ?? '').toList())];
     return const ListToCsvConverter().convert(rows);
   }
+
+  /// Restore shop data from a JSON backup file.
+  /// This will replace ALL existing data for the shop (clear then write from backup).
+  Future<({bool success, String? error})> restoreFromJson(String shopId, File file) async {
+    try {
+      // Read and parse JSON
+      final jsonString = await file.readAsString();
+      final Map<String, dynamic> data = jsonDecode(jsonString);
+
+      // Validate structure
+      final requiredKeys = ['products', 'suppliers', 'customers', 'sales', 'purchases', 'expenses', 'paymentMethods', 'stockAdjustments'];
+      for (var key in requiredKeys) {
+        if (!data.containsKey(key)) {
+          return (success: false, error: 'Invalid backup file: missing $key');
+        }
+      }
+
+      // Use a batched write (Firestore allows up to 500 operations per batch)
+      // We'll clear existing data first, then write new data.
+      // Clearing: delete all documents in each subcollection.
+
+      // 1. Clear existing data (delete all documents in subcollections)
+      await _clearSubcollection(shopId, 'products');
+      await _clearSubcollection(shopId, 'suppliers');
+      await _clearSubcollection(shopId, 'customers');
+      await _clearSubcollection(shopId, 'sales');
+      await _clearSubcollection(shopId, 'purchases');
+      await _clearSubcollection(shopId, 'expenses');
+      await _clearSubcollection(shopId, 'paymentMethods');
+      await _clearSubcollection(shopId, 'stockAdjustments');
+
+      // 2. Write new data in order: parents first, then children (sales items, purchase items)
+      // Products
+      for (var product in data['products']) {
+        final ref = _firestore.collection('shops').doc(shopId).collection('products').doc(product['id']);
+        product.remove('id');
+        // Convert ISO date strings back to Timestamp
+        _convertTimestamps(product);
+        await ref.set(product);
+      }
+
+      // Suppliers
+      for (var supplier in data['suppliers']) {
+        final ref = _firestore.collection('shops').doc(shopId).collection('suppliers').doc(supplier['id']);
+        supplier.remove('id');
+        _convertTimestamps(supplier);
+        await ref.set(supplier);
+      }
+
+      // Customers
+      for (var customer in data['customers']) {
+        final ref = _firestore.collection('shops').doc(shopId).collection('customers').doc(customer['id']);
+        customer.remove('id');
+        _convertTimestamps(customer);
+        await ref.set(customer);
+      }
+
+      // Payment Methods
+      for (var method in data['paymentMethods']) {
+        final ref = _firestore.collection('shops').doc(shopId).collection('paymentMethods').doc(method['id']);
+        method.remove('id');
+        _convertTimestamps(method);
+        await ref.set(method);
+      }
+
+      // Expenses
+      for (var expense in data['expenses']) {
+        final ref = _firestore.collection('shops').doc(shopId).collection('expenses').doc(expense['id']);
+        expense.remove('id');
+        _convertTimestamps(expense);
+        await ref.set(expense);
+      }
+
+      // Stock Adjustments
+      for (var adj in data['stockAdjustments']) {
+        final ref = _firestore.collection('shops').doc(shopId).collection('stockAdjustments').doc(adj['id']);
+        adj.remove('id');
+        _convertTimestamps(adj);
+        await ref.set(adj);
+      }
+
+      // Sales (and their items)
+      for (var sale in data['sales']) {
+        final saleRef = _firestore.collection('shops').doc(shopId).collection('sales').doc(sale['id']);
+        sale.remove('id');
+        _convertTimestamps(sale);
+        await saleRef.set(sale);
+      }
+      // Sale items: they are in a separate array 'sale_items' with saleId reference
+      if (data.containsKey('sale_items')) {
+        for (var item in data['sale_items']) {
+          final saleId = item['saleId'];
+          final itemRef = _firestore
+              .collection('shops')
+              .doc(shopId)
+              .collection('sales')
+              .doc(saleId)
+              .collection('items')
+              .doc(item['id']);
+          item.remove('id');
+          item.remove('saleId');
+          _convertTimestamps(item);
+          await itemRef.set(item);
+        }
+      }
+
+      // Purchases (and their items)
+      for (var purchase in data['purchases']) {
+        final purchaseRef = _firestore.collection('shops').doc(shopId).collection('purchases').doc(purchase['id']);
+        purchase.remove('id');
+        _convertTimestamps(purchase);
+        await purchaseRef.set(purchase);
+      }
+      if (data.containsKey('purchase_items')) {
+        for (var item in data['purchase_items']) {
+          final purchaseId = item['purchaseId'];
+          final itemRef = _firestore
+              .collection('shops')
+              .doc(shopId)
+              .collection('purchases')
+              .doc(purchaseId)
+              .collection('items')
+              .doc(item['id']);
+          item.remove('id');
+          item.remove('purchaseId');
+          _convertTimestamps(item);
+          await itemRef.set(item);
+        }
+      }
+
+      return (success: true, error: null);
+    } catch (e) {
+      print('Restore error: $e');
+      return (success: false, error: e.toString());
+    }
+  }
+
+  // Helper: delete all documents in a subcollection
+  Future<void> _clearSubcollection(String shopId, String collectionName) async {
+    final snapshot = await _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection(collectionName)
+        .get();
+    final batch = _firestore.batch();
+    for (var doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
+  // Helper: convert ISO date strings back to Timestamp
+  void _convertTimestamps(Map<String, dynamic> map) {
+    map.forEach((key, value) {
+      if (value is String && _isIsoDate(value)) {
+        map[key] = Timestamp.fromDate(DateTime.parse(value));
+      }
+    });
+  }
+
+  bool _isIsoDate(String value) {
+    // Simple check: starts with 4 digits and contains 'T'
+    return value.length >= 10 && value[4] == '-' && value.contains('T');
+  }
 }
