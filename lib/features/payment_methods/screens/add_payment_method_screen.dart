@@ -74,7 +74,7 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<PaymentMethodType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(labelText: 'Type *'),
                 items: const [
                   DropdownMenuItem(value: PaymentMethodType.cash, child: Text('Cash')),

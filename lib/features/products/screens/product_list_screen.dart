@@ -42,7 +42,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           'SKU: ${product.sku} | Stock: ${product.currentStock} ${product.unit}',
                         ),
                         trailing: Text(
-                          '${product.defaultSellingPrice.toStringAsFixed(2)}',
+                          product.defaultSellingPrice.toStringAsFixed(2),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),

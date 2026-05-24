@@ -289,7 +289,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               children: [
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Customer'),
-                  value: _selectedCustomerId,
+                  initialValue: _selectedCustomerId,
                   items: [
                     const DropdownMenuItem(
                       value: null,
@@ -336,7 +336,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Payment Method *',
                   ),
-                  value: _selectedPaymentMethodId,
+                  initialValue: _selectedPaymentMethodId,
                   items: paymentProvider.methods.map((method) {
                     return DropdownMenuItem(
                       value: method.id,

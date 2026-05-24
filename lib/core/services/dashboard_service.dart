@@ -2,11 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/dashboard_data.dart';
 import '../models/product_model.dart';
-import '../models/sale_model.dart';
-import '../models/expense_model.dart';
-import '../models/customer_model.dart';
 import '../models/supplier_model.dart';
-import '../models/purchase_model.dart';
 
 class DashboardService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

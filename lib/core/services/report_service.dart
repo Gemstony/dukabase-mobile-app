@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/sale_model.dart';
-import '../models/purchase_model.dart';
-import '../models/expense_model.dart';
 import '../models/product_model.dart';
 import '../models/report_models.dart';
 

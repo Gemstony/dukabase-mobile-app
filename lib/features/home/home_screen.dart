@@ -16,7 +16,6 @@ import '../shops/providers/shop_provider.dart';
 import '../../core/models/shop_model.dart';
 import '../../core/models/user_model.dart';
 import '../auth/providers/auth_provider.dart';
-import '../../core/models/shop_model.dart';
 import 'create_shop_screen.dart';
 import 'shop_detail_screen.dart';
 import '../products/screens/product_list_screen.dart'; // to be created

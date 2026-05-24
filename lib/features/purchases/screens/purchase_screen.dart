@@ -165,7 +165,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Payment Method *',
                     ),
-                    value: _selectedPaymentMethodId,
+                    initialValue: _selectedPaymentMethodId,
                     items: paymentProvider.methods.map((method) {
                       return DropdownMenuItem(
                         value: method.id,

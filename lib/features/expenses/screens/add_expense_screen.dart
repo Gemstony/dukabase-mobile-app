@@ -116,7 +116,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(labelText: 'Category *'),
                 items: ExpenseCategories.all.map((cat) {
                   return DropdownMenuItem(value: cat, child: Text(cat));
@@ -125,7 +125,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedPaymentMethodId,
+                initialValue: _selectedPaymentMethodId,
                 decoration: const InputDecoration(labelText: 'Payment Method *'),
                 items: paymentProvider.methods.map((method) {
                   return DropdownMenuItem(

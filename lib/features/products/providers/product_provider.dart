@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/models/product_model.dart';
-import '../../../core/models/batch_model.dart';
 
 class ProductProvider extends ChangeNotifier {
   final ProductService _productService = ProductService();

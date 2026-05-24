@@ -260,7 +260,7 @@ class _CreateStockAdjustmentScreenState
               const SizedBox(height: 12),
               // Reason
               DropdownButtonFormField<String>(
-                value: _selectedReason,
+                initialValue: _selectedReason,
                 decoration: const InputDecoration(labelText: 'Reason *'),
                 items: _reasons
                     .map(

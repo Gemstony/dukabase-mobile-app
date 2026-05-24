@@ -138,10 +138,12 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
   }
 
   Widget _buildDailySalesTable(SalesReportProvider provider) {
-    if (provider.isLoadingDaily)
+    if (provider.isLoadingDaily) {
       return const Center(child: CircularProgressIndicator());
-    if (provider.dailyReport.isEmpty)
+    }
+    if (provider.dailyReport.isEmpty) {
       return const Text('No sales data for this period');
+    }
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -182,10 +184,12 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
   }
 
   Widget _buildTopProductsList(SalesReportProvider provider) {
-    if (provider.isLoadingTop)
+    if (provider.isLoadingTop) {
       return const Center(child: CircularProgressIndicator());
-    if (provider.topProducts.isEmpty)
+    }
+    if (provider.topProducts.isEmpty) {
       return const Text('No product sales data');
+    }
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),

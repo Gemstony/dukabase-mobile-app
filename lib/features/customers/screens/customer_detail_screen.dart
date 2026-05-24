@@ -202,7 +202,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                           style: TextStyle(fontSize: 16),
                         ),
                         Text(
-                          '${outstanding.toStringAsFixed(2)}',
+                          outstanding.toStringAsFixed(2),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -254,9 +254,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                           ),
 
                           subtitle: Text(
-                            sale.createdAt != null
-                                ? 'Date: ${sale.createdAt.toLocal().toString().split(' ')[0]}'
-                                : 'No date',
+                            'Date: ${sale.createdAt.toLocal().toString().split(' ')[0]}',
                           ),
 
                           trailing: FittedBox(
