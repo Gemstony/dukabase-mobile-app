@@ -1,3 +1,4 @@
+import 'package:dukabase/features/backup/screens/backup_screen.dart';
 import 'package:dukabase/features/customers/screens/customer_list_screen.dart';
 import 'package:dukabase/features/dashboard/screens/owner_dashboard_screen.dart';
 import 'package:dukabase/features/dashboard/screens/staff_dashboard_screen.dart';
@@ -222,6 +223,15 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
+            ListTile(
+              leading: const Icon(Icons.backup),
+              title: const Text('Backup & Restore'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToBackup(context, shopProvider.currentShop);
+              },
+            ),
+
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -396,59 +406,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-void _navigateToSalesReport(BuildContext context, ShopModel? currentShop) {
-  if (currentShop == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select a shop first')),
+  void _navigateToSalesReport(BuildContext context, ShopModel? currentShop) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => SalesReportScreen(shop: currentShop)),
     );
-    return;
   }
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => SalesReportScreen(shop: currentShop)),
-  );
-}
 
-void _navigateToPurchasesReport(BuildContext context, ShopModel? currentShop) {
-  if (currentShop == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select a shop first')),
+  void _navigateToPurchasesReport(
+    BuildContext context,
+    ShopModel? currentShop,
+  ) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PurchaseReportScreen(shop: currentShop),
+      ),
     );
-    return;
   }
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => PurchaseReportScreen(shop: currentShop)),
-  );
-}
 
-void _navigateToExpensesReport(BuildContext context, ShopModel? currentShop) {
-  if (currentShop == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select a shop first')),
+  void _navigateToExpensesReport(BuildContext context, ShopModel? currentShop) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ExpenseReportScreen(shop: currentShop)),
     );
-    return;
   }
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => ExpenseReportScreen(shop: currentShop)),
-  );
-}
 
-void _navigateToProductReport(BuildContext context, ShopModel? currentShop) {
-  if (currentShop == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select a shop first')),
+  void _navigateToProductReport(BuildContext context, ShopModel? currentShop) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ProductReportScreen(shop: currentShop)),
     );
-    return;
   }
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => ProductReportScreen(shop: currentShop)),
-  );
-}
 
-void _navigateToIncomeReport(BuildContext context, ShopModel? currentShop) {
+  void _navigateToIncomeReport(BuildContext context, ShopModel? currentShop) {
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => IncomeReportScreen(shop: currentShop)),
+    );
+  }
+
+  void _navigateToBackup(BuildContext context, ShopModel? currentShop) {
   if (currentShop == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Please select a shop first')),
@@ -457,7 +485,7 @@ void _navigateToIncomeReport(BuildContext context, ShopModel? currentShop) {
   }
   Navigator.push(
     context,
-    MaterialPageRoute(builder: (_) => IncomeReportScreen(shop: currentShop)),
+    MaterialPageRoute(builder: (_) => BackupScreen(shop: currentShop)),
   );
 }
 
