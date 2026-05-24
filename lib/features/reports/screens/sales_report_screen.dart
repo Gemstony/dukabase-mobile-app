@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/sales_report_provider.dart';
 import '../../../core/models/shop_model.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class SalesReportScreen extends StatefulWidget {
   final ShopModel shop;
@@ -108,29 +109,29 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     );
     final avgTransaction = totalTransactions > 0
         ? totalSales / totalTransactions
-        : 0;
+        : 0.0;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _kpiTile('Total Sales', totalSales),
-            _kpiTile('Transactions', totalTransactions.toDouble()),
-            _kpiTile('Average', avgTransaction.toDouble()),
+            _kpiTile('Total Sales', CurrencyFormatter.format(totalSales, widget.shop.currency ?? 'TZS')),
+            _kpiTile('Transactions', totalTransactions.toDouble().toStringAsFixed(0)),
+            _kpiTile('Average', CurrencyFormatter.format(avgTransaction, widget.shop.currency ?? 'TZS')),
           ],
         ),
       ),
     );
   }
 
-  Widget _kpiTile(String title, double value) {
+  Widget _kpiTile(String title, String value) {
     return Column(
       children: [
         Text(title, style: const TextStyle(fontSize: 12)),
         const SizedBox(height: 4),
         Text(
-          value.toStringAsFixed(2),
+          value,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ],
@@ -170,7 +171,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                       DataCell(
                         Text(DateFormat('dd MMM yyyy').format(item.date)),
                       ),
-                      DataCell(Text(item.totalSales.toStringAsFixed(2))),
+                      DataCell(Text(CurrencyFormatter.format(item.totalSales, widget.shop.currency ?? 'TZS'))),
                       DataCell(Text(item.transactionCount.toString())),
                     ],
                   );
@@ -212,7 +213,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                   subtitle: Text(
                     'Quantity sold: ${item.quantitySold.toStringAsFixed(2)}',
                   ),
-                  trailing: Text(item.revenue.toStringAsFixed(2)),
+                  trailing: Text(CurrencyFormatter.format(item.revenue, widget.shop.currency ?? 'TZS')),
                 );
               },
             ),
@@ -261,9 +262,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                           DateFormat('dd MMM yyyy, HH:mm').format(date),
                         ),
                         trailing: Text(
-                          (data['totalAmount'] as num)
-                              .toDouble()
-                              .toStringAsFixed(2),
+                          CurrencyFormatter.format((data['totalAmount'] as num).toDouble(), widget.shop.currency ?? 'TZS'),
                         ),
                       );
                     },

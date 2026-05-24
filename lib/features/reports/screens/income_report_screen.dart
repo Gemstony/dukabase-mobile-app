@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/income_report_provider.dart';
 import '../../../core/models/shop_model.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class IncomeReportScreen extends StatefulWidget {
   final ShopModel shop;
@@ -135,7 +136,7 @@ class _IncomeReportScreenState extends State<IncomeReportScreen> {
         children: [
           Text(label, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
           Text(
-            value.toStringAsFixed(2),
+            CurrencyFormatter.format(value, widget.shop.currency ?? 'TZS'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: isBold ? FontWeight.bold : FontWeight.w500,

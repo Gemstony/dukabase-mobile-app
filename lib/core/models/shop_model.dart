@@ -39,7 +39,7 @@ factory ShopModel.fromMap(String id, Map<String, dynamic> map) {
     ownerId: map['ownerId'] as String,
     address: map['address'] as String?,
     phone: map['phone'] as String?,
-    currency: map['currency'] as String? ?? 'USD',
+    currency: map['currency'] as String? ?? 'TZS',
     createdAt: (map['createdAt'] as Timestamp).toDate(), // ✅ convert
     isActive: map['isActive'] ?? true,
   );

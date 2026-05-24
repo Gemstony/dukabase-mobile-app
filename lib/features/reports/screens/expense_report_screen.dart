@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/expense_report_provider.dart';
 import '../../../core/models/shop_model.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class ExpenseReportScreen extends StatefulWidget {
   final ShopModel shop;
@@ -100,7 +101,7 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
               children: [
                 const Text('Total Expenses', style: TextStyle(fontSize: 16)),
                 Text(
-                  totalExpenses.toStringAsFixed(2),
+                  CurrencyFormatter.format(totalExpenses, widget.shop.currency ?? 'TZS'),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red),
                 ),
               ],
@@ -132,7 +133,7 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
                 final item = provider.categorySummary[i];
                 return ListTile(
                   title: Text(item.category),
-                  trailing: Text(item.totalAmount.toStringAsFixed(2)),
+                  trailing: Text(CurrencyFormatter.format(item.totalAmount, widget.shop.currency ?? 'TZS'), style: const TextStyle(color: Colors.red)),
                 );
               },
             ),
@@ -171,7 +172,7 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
                       return ListTile(
                         title: Text(description),
                         subtitle: Text('$category • ${DateFormat('dd MMM yyyy').format(date)}'),
-                        trailing: Text(amount.toStringAsFixed(2), style: const TextStyle(color: Colors.red)),
+                        trailing: Text(CurrencyFormatter.format(amount, widget.shop.currency ?? 'TZS'), style: const TextStyle(color: Colors.red)),
                       );
                     },
                   ),

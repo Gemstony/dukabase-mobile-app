@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/expense_provider.dart';
 import '../../../core/models/shop_model.dart';
 import 'add_expense_screen.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class ExpenseListScreen extends StatefulWidget {
   final ShopModel shop;
@@ -48,7 +49,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                           ],
                         ),
                         trailing: Text(
-                          '-${expense.amount.toStringAsFixed(2)}',
+                          '-${CurrencyFormatter.format(expense.amount, widget.shop.currency ?? "TZS")}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.red,

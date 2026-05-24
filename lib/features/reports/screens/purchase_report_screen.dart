@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/purchase_report_provider.dart';
 import '../../../core/models/shop_model.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class PurchaseReportScreen extends StatefulWidget {
   final ShopModel shop;
@@ -97,28 +98,28 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
     }
     final totalPurchases = provider.dailyReport.fold(0.0, (sum, item) => sum + item.totalPurchases);
     final totalTransactions = provider.dailyReport.fold(0, (sum, item) => sum + item.purchaseCount);
-    final avgPurchase = totalTransactions > 0 ? totalPurchases / totalTransactions : 0;
+    final avgPurchase = totalTransactions > 0 ? totalPurchases / totalTransactions : 0.0;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _kpiTile('Total Purchases', totalPurchases),
-            _kpiTile('Purchase Orders', totalTransactions.toDouble()),
-            _kpiTile('Average', avgPurchase.toDouble()),
+            _kpiTile('Total Purchases', CurrencyFormatter.format(totalPurchases, widget.shop.currency ?? 'TZS')),
+            _kpiTile('Purchase Orders', totalTransactions.toDouble().toStringAsFixed(0)),
+            _kpiTile('Average', CurrencyFormatter.format(avgPurchase, widget.shop.currency ?? 'TZS')),
           ],
         ),
       ),
     );
   }
 
-  Widget _kpiTile(String title, double value) {
+  Widget _kpiTile(String title, String value) {
     return Column(
       children: [
         Text(title, style: const TextStyle(fontSize: 12)),
         const SizedBox(height: 4),
-        Text(value.toStringAsFixed(2), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -146,7 +147,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
                 rows: provider.dailyReport.map((item) {
                   return DataRow(cells: [
                     DataCell(Text(DateFormat('dd MMM yyyy').format(item.date))),
-                    DataCell(Text(item.totalPurchases.toStringAsFixed(2))),
+                    DataCell(Text(CurrencyFormatter.format(item.totalPurchases, widget.shop.currency ?? 'TZS'))),
                     DataCell(Text(item.purchaseCount.toString())),
                   ]);
                 }).toList(),
@@ -178,7 +179,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
                 return ListTile(
                   title: Text(item.productName),
                   subtitle: Text('Quantity: ${item.quantitySold.toStringAsFixed(2)}'),
-                  trailing: Text(item.revenue.toStringAsFixed(2)),
+                  trailing: Text(CurrencyFormatter.format(item.revenue, widget.shop.currency ?? 'TZS')),
                 );
               },
             ),
@@ -207,7 +208,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
                 final supp = provider.supplierSummary[i];
                 return ListTile(
                   title: Text(supp.supplierName),
-                  trailing: Text(supp.totalAmount.toStringAsFixed(2)),
+                  trailing: Text(CurrencyFormatter.format(supp.totalAmount, widget.shop.currency ?? 'TZS')),
                 );
               },
             ),
@@ -243,7 +244,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
                       return ListTile(
                         title: Text('PO #${doc.id.substring(0, 6)}'),
                         subtitle: Text(DateFormat('dd MMM yyyy, HH:mm').format(date)),
-                        trailing: Text((data['totalAmount'] as num).toDouble().toStringAsFixed(2)),
+                        trailing: Text(CurrencyFormatter.format((data['totalAmount'] as num).toDouble(), widget.shop.currency ?? 'TZS')),
                       );
                     },
                   ),

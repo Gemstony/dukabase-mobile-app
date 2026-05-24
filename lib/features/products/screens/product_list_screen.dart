@@ -4,6 +4,7 @@ import '../providers/product_provider.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/shop_model.dart';
 import 'add_product_screen.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class ProductListScreen extends StatefulWidget {
   final ShopModel shop;
@@ -42,7 +43,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           'SKU: ${product.sku} | Stock: ${product.currentStock} ${product.unit}',
                         ),
                         trailing: Text(
-                          product.defaultSellingPrice.toStringAsFixed(2),
+                          CurrencyFormatter.format(product.defaultSellingPrice, widget.shop.currency ?? "TZS"),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),

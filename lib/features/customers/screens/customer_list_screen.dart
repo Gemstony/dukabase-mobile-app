@@ -4,6 +4,7 @@ import '../providers/customer_provider.dart';
 import '../../../core/models/shop_model.dart';
 import 'customer_detail_screen.dart';
 import 'add_customer_screen.dart'; // we'll create next
+import '../../../core/utils/currency_formatter.dart';
 
 class CustomerListScreen extends StatefulWidget {
   final ShopModel shop;
@@ -38,7 +39,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: ListTile(
                         title: Text(customer.name),
-                        subtitle: Text('${customer.phone} | Balance: ${customer.currentBalance}'),
+                        subtitle: Text('${customer.phone} | Balance: ${CurrencyFormatter.format(customer.currentBalance, widget.shop.currency ?? "TZS")}'),
                         trailing: const Icon(Icons.arrow_forward_ios),
                         onTap: () {
                           Navigator.push(

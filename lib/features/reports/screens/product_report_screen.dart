@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_report_provider.dart';
 import '../../../core/models/shop_model.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class ProductReportScreen extends StatefulWidget {
   final ShopModel shop;
@@ -78,22 +79,22 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _kpiTile('Total Products', totalProducts.toDouble()),
-            _kpiTile('Low Stock', lowStockCount.toDouble()),
-            _kpiTile('Stock Value', totalStockValue),
+            _kpiTile('Total Products', totalProducts.toDouble().toStringAsFixed(0)),
+            _kpiTile('Low Stock', lowStockCount.toDouble().toStringAsFixed(0)),
+            _kpiTile('Stock Value', CurrencyFormatter.format(totalStockValue, widget.shop.currency ?? 'TZS')),
           ],
         ),
       ),
     );
   }
 
-  Widget _kpiTile(String title, double value) {
+  Widget _kpiTile(String title, String value) {
     return Column(
       children: [
         Text(title, style: const TextStyle(fontSize: 12)),
         const SizedBox(height: 4),
         Text(
-          value.toStringAsFixed(2),
+          value,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ],
@@ -179,7 +180,7 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
                           'SKU: ${p.sku} | Stock: ${p.currentStock} ${p.unit}',
                         ),
                         trailing: Text(
-                          p.defaultSellingPrice.toStringAsFixed(2),
+                          CurrencyFormatter.format(p.defaultSellingPrice, widget.shop.currency ?? 'TZS'),
                         ),
                       );
                     },

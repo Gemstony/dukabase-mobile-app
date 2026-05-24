@@ -15,16 +15,15 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _currencyController = TextEditingController(text: 'TZS');
+  String _selectedCurrency = 'TZS';
+  final List<String> _currencies = ['TZS', 'USD', 'KES', 'NGN', 'EUR', 'GBP'];
   bool _isLoading = false;
-
 
   @override
   void dispose() {
     _nameController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
-    _currencyController.dispose();
     super.dispose();
   }
 
@@ -45,7 +44,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
       phone: _phoneController.text.trim().isEmpty
           ? null
           : _phoneController.text.trim(),
-      currency: _currencyController.text.trim(),
+      currency: _selectedCurrency,
     );
 
     setState(() => _isLoading = false);
@@ -99,11 +98,15 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _currencyController,
-                decoration: const InputDecoration(
-                  labelText: 'Currency (e.g., USD, TZS)',
-                ),
+              DropdownButtonFormField<String>(
+                value: _selectedCurrency,
+                decoration: const InputDecoration(labelText: 'Currency'),
+                items: _currencies
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (val) => setState(() {
+                  if (val != null) _selectedCurrency = val;
+                }),
               ),
               const SizedBox(height: 24),
               ElevatedButton(

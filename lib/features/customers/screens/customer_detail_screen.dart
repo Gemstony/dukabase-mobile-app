@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import '../providers/customer_provider.dart';
 import '../../payments/providers/payment_provider.dart';
 import '../../../core/services/customer_service.dart';
 import '../../../core/services/sale_service.dart';
@@ -10,6 +9,7 @@ import '../../../core/models/shop_model.dart';
 import '../../../core/models/customer_model.dart';
 import '../../../core/models/sale_model.dart';
 import '../../../core/models/payment_model.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final ShopModel shop;
@@ -202,7 +202,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                           style: TextStyle(fontSize: 16),
                         ),
                         Text(
-                          outstanding.toStringAsFixed(2),
+                          CurrencyFormatter.format(outstanding, widget.shop.currency ?? "TZS"),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -265,11 +265,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  'Total: ${sale.totalAmount.toStringAsFixed(2)}',
+                                  'Total: ${CurrencyFormatter.format(sale.totalAmount, widget.shop.currency ?? "TZS")}',
                                 ),
 
                                 Text(
-                                  'Paid: ${sale.paidAmount.toStringAsFixed(2)}',
+                                  'Paid: ${CurrencyFormatter.format(sale.paidAmount, widget.shop.currency ?? "TZS")}',
                                   style: const TextStyle(fontSize: 12),
                                 ),
 
@@ -315,7 +315,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                         child: ListTile(
                           leading: const Icon(Icons.receipt),
                           title: Text(
-                            '${payment.amount.toStringAsFixed(2)} received',
+                            '${CurrencyFormatter.format(payment.amount, widget.shop.currency ?? "TZS")} received',
                           ),
                           subtitle: Text(
                             payment.note.isNotEmpty ? payment.note : 'No note',

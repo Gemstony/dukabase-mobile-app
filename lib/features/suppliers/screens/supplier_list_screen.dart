@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/supplier_provider.dart';
 import '../../../core/models/shop_model.dart';
 import 'add_supplier_screen.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class SupplierListScreen extends StatefulWidget {
   final ShopModel shop;
@@ -37,7 +38,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: ListTile(
                         title: Text(supplier.name),
-                        subtitle: Text('${supplier.phone} | Balance: ${supplier.currentBalance}'),
+                        subtitle: Text('${supplier.phone} | Balance: ${CurrencyFormatter.format(supplier.currentBalance, widget.shop.currency ?? "TZS")}'),
                         trailing: Text(supplier.email ?? ''),
                       ),
                     );
