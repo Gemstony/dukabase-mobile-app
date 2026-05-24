@@ -3,6 +3,11 @@ import 'package:dukabase/features/dashboard/screens/owner_dashboard_screen.dart'
 import 'package:dukabase/features/dashboard/screens/staff_dashboard_screen.dart';
 import 'package:dukabase/features/expenses/screens/expense_list_screen.dart';
 import 'package:dukabase/features/payment_methods/screens/payment_method_list_screen.dart';
+import 'package:dukabase/features/reports/screens/expense_report_screen.dart';
+import 'package:dukabase/features/reports/screens/income_report_screen.dart';
+import 'package:dukabase/features/reports/screens/product_report_screen.dart';
+import 'package:dukabase/features/reports/screens/purchase_report_screen.dart';
+import 'package:dukabase/features/reports/screens/sales_report_screen.dart';
 import 'package:dukabase/features/sales/screens/new_sale_screen.dart';
 import 'package:dukabase/features/stock_adjustments/screens/stock_adjustment_list_screen.dart';
 import 'package:flutter/material.dart';
@@ -18,19 +23,35 @@ import '../products/screens/product_list_screen.dart'; // to be created
 import '../suppliers/screens/supplier_list_screen.dart'; // to be created
 import '../purchases/screens/purchase_screen.dart'; // to be created
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _shopsRequested = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      final currentUser = authProvider.currentUser;
+      if (!_shopsRequested && currentUser != null) {
+        _shopsRequested = true;
+        shopProvider.loadUserShops(currentUser.id);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final shopProvider = Provider.of<ShopProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
     final currentUser = authProvider.currentUser;
-
-    // Force a refresh of shops (the stream will also update, but this is safe)
-    if (currentUser != null) {
-      shopProvider.loadUserShops(authProvider.currentUser!.id);
-    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('DukaBase')),
@@ -146,6 +167,59 @@ class HomeScreen extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 _navigateToStockAdjustments(context, shopProvider.currentShop);
+              },
+            ),
+
+            // Reports section header
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'REPORTS',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.shopping_cart),
+              title: const Text('Sales Report'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToSalesReport(context, shopProvider.currentShop);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_shopping_cart),
+              title: const Text('Purchases Report'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToPurchasesReport(context, shopProvider.currentShop);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.receipt),
+              title: const Text('Expenses Report'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToExpensesReport(context, shopProvider.currentShop);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.inventory),
+              title: const Text('Product Report'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToProductReport(context, shopProvider.currentShop);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.trending_up),
+              title: const Text('Income Report'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToIncomeReport(context, shopProvider.currentShop);
               },
             ),
 
@@ -322,6 +396,71 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+void _navigateToSalesReport(BuildContext context, ShopModel? currentShop) {
+  if (currentShop == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select a shop first')),
+    );
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => SalesReportScreen(shop: currentShop)),
+  );
+}
+
+void _navigateToPurchasesReport(BuildContext context, ShopModel? currentShop) {
+  if (currentShop == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select a shop first')),
+    );
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => PurchaseReportScreen(shop: currentShop)),
+  );
+}
+
+void _navigateToExpensesReport(BuildContext context, ShopModel? currentShop) {
+  if (currentShop == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select a shop first')),
+    );
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => ExpenseReportScreen(shop: currentShop)),
+  );
+}
+
+void _navigateToProductReport(BuildContext context, ShopModel? currentShop) {
+  if (currentShop == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select a shop first')),
+    );
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => ProductReportScreen(shop: currentShop)),
+  );
+}
+
+void _navigateToIncomeReport(BuildContext context, ShopModel? currentShop) {
+  if (currentShop == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select a shop first')),
+    );
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => IncomeReportScreen(shop: currentShop)),
+  );
+}
 
   Widget _buildEmptyState(BuildContext context) {
     final currentUser = Provider.of<AuthProvider>(context).currentUser;

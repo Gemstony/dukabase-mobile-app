@@ -16,10 +16,16 @@ import 'features/purchases/providers/purchase_provider.dart';
 import 'features/customers/providers/customer_provider.dart';
 import 'features/sales/providers/sale_provider.dart';
 import 'features/payments/providers/payment_provider.dart';
-import 'features/payment_methods/providers/payment_method_provider.dart'; 
+import 'features/payment_methods/providers/payment_method_provider.dart';
 import 'features/expenses/providers/expense_provider.dart';
 import 'features/stock_adjustments/providers/stock_adjustment_provider.dart';
 import 'features/dashboard/providers/dashboard_provider.dart';
+
+import 'features/reports/providers/sales_report_provider.dart';
+import 'features/reports/providers/purchase_report_provider.dart';
+import 'features/reports/providers/product_report_provider.dart';
+import 'features/reports/providers/income_report_provider.dart';
+import 'features/reports/providers/expense_report_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +57,12 @@ class DukaBaseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => StockAdjustmentProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
+
+        ChangeNotifierProvider(create: (_) => SalesReportProvider()),
+        ChangeNotifierProvider(create: (_) => PurchaseReportProvider()),
+        ChangeNotifierProvider(create: (_) => ProductReportProvider()),
+        ChangeNotifierProvider(create: (_) => IncomeReportProvider()),
+        ChangeNotifierProvider(create: (_) => ExpenseReportProvider()),
       ],
       child: MaterialApp(
         title: 'DukaBase',
