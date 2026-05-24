@@ -57,6 +57,7 @@ class ReportService {
     DateTime start,
     DateTime end,
   ) async {
+    // Get all sales in date range
     final salesSnapshot = await _firestore
         .collection('shops')
         .doc(shopId)
@@ -68,17 +69,15 @@ class ReportService {
     final Map<String, ({String productName, double quantity, double revenue})>
     productMap = {};
     for (var saleDoc in salesSnapshot.docs) {
+      // Get items for each sale (allowed by your rules)
       final itemsSnapshot = await saleDoc.reference.collection('items').get();
       for (var itemDoc in itemsSnapshot.docs) {
         final data = itemDoc.data();
         final productId = data['productId'] as String;
-        String productName = data['productName'] as String? ?? '';
+        final productName =
+            data['productName'] as String? ?? 'Unknown'; // denormalized
         final quantity = (data['quantity'] as num).toDouble();
         final subtotal = (data['subtotal'] as num).toDouble();
-
-        if (productName.isEmpty) {
-          productName = await _getProductName(shopId, productId);
-        }
 
         if (!productMap.containsKey(productId)) {
           productMap[productId] = (
@@ -188,14 +187,10 @@ class ReportService {
       for (var itemDoc in itemsSnapshot.docs) {
         final data = itemDoc.data();
         final productId = data['productId'] as String;
-        String productName = data['productName'] as String? ?? '';
+        final productName =
+            data['productName'] as String? ?? 'Unknown'; // denormalized
         final quantity = (data['quantity'] as num).toDouble();
-        final costPrice = (data['costPrice'] as num).toDouble();
-        final totalCost = quantity * costPrice;
-
-        if (productName.isEmpty) {
-          productName = await _getProductName(shopId, productId);
-        }
+        final totalCost = (data['subtotal'] as num).toDouble();
 
         if (!productMap.containsKey(productId)) {
           productMap[productId] = (
@@ -244,12 +239,9 @@ class ReportService {
     for (var doc in purchasesSnapshot.docs) {
       final data = doc.data();
       final supplierId = data['supplierId'] as String;
-      String supplierName = data['supplierName'] as String? ?? '';
+      final supplierName =
+          data['supplierName'] as String? ?? 'Unknown'; // denormalized
       final amount = (data['totalAmount'] as num).toDouble();
-
-      if (supplierName.isEmpty) {
-        supplierName = await _getSupplierName(shopId, supplierId);
-      }
 
       if (!supplierMap.containsKey(supplierId)) {
         supplierMap[supplierId] = (supplierName: supplierName, amount: 0);
@@ -340,43 +332,38 @@ class ReportService {
 
   // ---------- PRODUCT REPORT ----------
 
-  /// Get list of all products with pagination.
-  Stream<QuerySnapshot<Map<String, dynamic>>> getProductsPaginated(
-    String shopId, {
-    int limit = 20,
-    DocumentSnapshot? lastDocument,
-  }) {
-    var query = _firestore
-        .collection('shops')
-        .doc(shopId)
-        .collection('products')
-        .orderBy('name')
-        .limit(limit);
-    if (lastDocument != null) {
-      query = query.startAfterDocument(lastDocument);
-    }
-    return query.snapshots();
-  }
+// ---------- PRODUCT REPORT ----------
 
-  /// Get low stock products (currentStock <= lowStockAlert).
-  Stream<QuerySnapshot<Map<String, dynamic>>> getLowStockProducts(
-    String shopId,
-  ) {
-    return _firestore
-        .collection('shops')
-        .doc(shopId)
-        .collection('products')
-        .where(
-          'currentStock',
-          isLessThanOrEqualTo: FieldValue.arrayUnion([
-            FieldValue.serverTimestamp(),
-          ]),
-        )
-        // Firestore doesn't support comparing fields directly; we need a composite index.
-        // Alternative: store a boolean 'isLowStock' and update via client.
-        // For now, we'll fetch all and filter client‑side.
-        .snapshots();
+/// Get list of all products with pagination.
+Stream<QuerySnapshot<Map<String, dynamic>>> getProductsPaginated(
+  String shopId, {
+  int limit = 20,
+  DocumentSnapshot? lastDocument,
+}) {
+  var query = _firestore
+      .collection('shops')
+      .doc(shopId)
+      .collection('products')
+      .orderBy('name')
+      .limit(limit);
+  if (lastDocument != null) {
+    query = query.startAfterDocument(lastDocument);
   }
+  return query.snapshots();
+}
+
+/// Get low stock products (client‑side filter, real‑time stream)
+Stream<List<ProductModel>> getLowStockProductsStream(String shopId) {
+  return _firestore
+      .collection('shops')
+      .doc(shopId)
+      .collection('products')
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => ProductModel.fromMap(doc.id, doc.data()))
+          .where((product) => product.currentStock <= product.lowStockAlert)
+          .toList());
+}
 
   // ---------- INCOME REPORT (Simplified) ----------
   // ---------- INCOME REPORT ----------

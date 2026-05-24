@@ -21,7 +21,9 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
     _historyController.addListener(_onHistoryScroll);
   }
 

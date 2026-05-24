@@ -17,19 +17,24 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      Provider.of<ProductReportProvider>(context, listen: false)
-          .loadProducts(widget.shop.id, refresh: true);
-      Provider.of<ProductReportProvider>(context, listen: false)
-          .loadLowStockProducts(widget.shop.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ProductReportProvider>(
+        context,
+        listen: false,
+      );
+      provider.loadProducts(widget.shop.id, refresh: true);
+      provider.loadLowStockProducts(widget.shop.id);
     });
     _productController.addListener(_onScroll);
   }
 
   void _onScroll() {
-    if (_productController.position.pixels >= _productController.position.maxScrollExtent - 200) {
-      Provider.of<ProductReportProvider>(context, listen: false)
-          .loadProducts(widget.shop.id);
+    if (_productController.position.pixels >=
+        _productController.position.maxScrollExtent - 200) {
+      Provider.of<ProductReportProvider>(
+        context,
+        listen: false,
+      ).loadProducts(widget.shop.id);
     }
   }
 
@@ -63,7 +68,10 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
   Widget _buildKPISection(ProductReportProvider provider) {
     final totalProducts = provider.products.length;
     final lowStockCount = provider.lowStockProducts.length;
-    final totalStockValue = provider.products.fold(0.0, (sum, p) => sum + (p.currentStock * (p.defaultSellingPrice)));
+    final totalStockValue = provider.products.fold(
+      0.0,
+      (sum, p) => sum + (p.currentStock * (p.defaultSellingPrice)),
+    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -84,7 +92,10 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
       children: [
         Text(title, style: const TextStyle(fontSize: 12)),
         const SizedBox(height: 4),
-        Text(value.toStringAsFixed(2), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          value.toStringAsFixed(2),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
@@ -97,7 +108,14 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Low Stock Alerts', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red)),
+            const Text(
+              'Low Stock Alerts',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
             const SizedBox(height: 8),
             ListView.builder(
               shrinkWrap: true,
@@ -108,7 +126,9 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
                 return ListTile(
                   leading: const Icon(Icons.warning, color: Colors.orange),
                   title: Text(p.name),
-                  subtitle: Text('Stock: ${p.currentStock} ${p.unit} (Alert at ${p.lowStockAlert})'),
+                  subtitle: Text(
+                    'Stock: ${p.currentStock} ${p.unit} (Alert at ${p.lowStockAlert})',
+                  ),
                 );
               },
             ),
@@ -125,29 +145,45 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('All Products', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'All Products',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             provider.isLoadingProducts && provider.products.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : provider.products.isEmpty
-                    ? const Text('No products found')
-                    : ListView.builder(
-                        controller: _productController,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: provider.products.length + (provider.hasMoreProducts && provider.isLoadingProducts ? 1 : 0),
-                        itemBuilder: (_, i) {
-                          if (i == provider.products.length) {
-                            return const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()));
-                          }
-                          final p = provider.products[i];
-                          return ListTile(
-                            title: Text(p.name),
-                            subtitle: Text('SKU: ${p.sku} | Stock: ${p.currentStock} ${p.unit}'),
-                            trailing: Text(p.defaultSellingPrice.toStringAsFixed(2)),
-                          );
-                        },
-                      ),
+                ? const Text('No products found')
+                : ListView.builder(
+                    controller: _productController,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount:
+                        provider.products.length +
+                        (provider.hasMoreProducts && provider.isLoadingProducts
+                            ? 1
+                            : 0),
+                    itemBuilder: (_, i) {
+                      if (i == provider.products.length) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(8),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      final p = provider.products[i];
+                      return ListTile(
+                        title: Text(p.name),
+                        subtitle: Text(
+                          'SKU: ${p.sku} | Stock: ${p.currentStock} ${p.unit}',
+                        ),
+                        trailing: Text(
+                          p.defaultSellingPrice.toStringAsFixed(2),
+                        ),
+                      );
+                    },
+                  ),
           ],
         ),
       ),

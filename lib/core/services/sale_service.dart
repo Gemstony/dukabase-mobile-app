@@ -11,7 +11,13 @@ class SaleService {
     required String paymentMethodId,
     required double paidAmount,
     required List<
-      ({String batchId, String productId, double quantity, double sellingPrice})
+      ({
+        String batchId,
+        String productId,
+        String productName, // ✅ new field
+        double quantity,
+        double sellingPrice,
+      })
     >
     items,
   }) async {
@@ -80,10 +86,11 @@ class SaleService {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        // Add sale item document
+        // Add sale item document with productName
         final saleItemRef = saleRef.collection('items').doc();
         final saleItem = SaleItemModel(
           productId: item.productId,
+          productName: item.productName, // ✅ denormalized
           batchId: item.batchId,
           quantity: item.quantity,
           sellingPrice: item.sellingPrice,

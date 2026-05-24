@@ -53,6 +53,7 @@ class SaleModel {
 
 class SaleItemModel {
   final String productId;
+  final String productName; // ✅ new field
   final String batchId;
   final double quantity;
   final double sellingPrice;
@@ -60,6 +61,7 @@ class SaleItemModel {
 
   SaleItemModel({
     required this.productId,
+    required this.productName, // ✅ new field
     required this.batchId,
     required this.quantity,
     required this.sellingPrice,
@@ -69,6 +71,7 @@ class SaleItemModel {
   Map<String, dynamic> toMap() {
     return {
       'productId': productId,
+      'productName': productName, // ✅ new field
       'batchId': batchId,
       'quantity': quantity,
       'sellingPrice': sellingPrice,
@@ -79,6 +82,7 @@ class SaleItemModel {
   factory SaleItemModel.fromMap(Map<String, dynamic> map) {
     return SaleItemModel(
       productId: map['productId'] as String,
+      productName: map['productName'] as String, // ✅ new field
       batchId: map['batchId'] as String,
       quantity: (map['quantity'] as num).toDouble(),
       sellingPrice: (map['sellingPrice'] as num).toDouble(),

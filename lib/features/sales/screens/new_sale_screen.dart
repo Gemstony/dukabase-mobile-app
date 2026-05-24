@@ -258,6 +258,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             (item) => (
               batchId: item.batchId,
               productId: item.productId,
+              productName: item.productName,
               quantity: item.quantity,
               sellingPrice: item.sellingPrice,
             ),

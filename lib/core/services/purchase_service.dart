@@ -1,22 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/purchase_model.dart';
 import '../models/batch_model.dart';
-import 'product_service.dart';
 
 class PurchaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final ProductService _productService = ProductService();
 
-  // Record a purchase with multiple batches
   Future<bool> recordPurchase({
     required String shopId,
     required String supplierId,
+    required String supplierName, // ✅ new field
     required double totalAmount,
     required double paidAmount,
     String? paymentMethodId,
     required List<
       ({
         String productId,
+        String productName, // ✅ new field
         String batchCode,
         double quantity,
         double costPrice,
@@ -38,6 +38,7 @@ class PurchaseService {
         id: purchaseRef.id,
         shopId: shopId,
         supplierId: supplierId,
+        supplierName: supplierName,
         totalAmount: totalAmount,
         paidAmount: paidAmount,
         balance: totalAmount - paidAmount,
@@ -94,10 +95,11 @@ class PurchaseService {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        // Add purchase item document
+        // Add purchase item document with productName
         final purchaseItemRef = purchaseRef.collection('items').doc();
         final purchaseItem = PurchaseItemModel(
           productId: item.productId,
+          productName: item.productName, // ✅ denormalized
           batchId: batchRef.id,
           quantity: item.quantity,
           costPrice: item.costPrice,
@@ -118,7 +120,6 @@ class PurchaseService {
           'updatedAt': FieldValue.serverTimestamp(),
         });
       } else if (paidAmount > totalAmount) {
-        // Overpayment decreases balance
         final supplierRef = _firestore
             .collection('shops')
             .doc(shopId)
@@ -133,7 +134,7 @@ class PurchaseService {
       await batch.commit();
       return true;
     } catch (e) {
-      print('Record purchase error: $e');
+      debugPrint('Record purchase error: $e');
       return false;
     }
   }

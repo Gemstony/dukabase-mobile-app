@@ -96,6 +96,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     final success = await purchaseProvider.recordPurchase(
       shopId: widget.shop.id,
       supplierId: _selectedSupplier!.id,
+      supplierName: _selectedSupplier!.name,
       totalAmount: _totalAmount,
       paidAmount: _paidAmount,
       paymentMethodId: _selectedPaymentMethodId!,
@@ -103,6 +104,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           .map(
             (item) => (
               productId: item.productId,
+              productName: item.productName,
               batchCode: item.batchCode,
               quantity: item.quantity,
               costPrice: item.costPrice,

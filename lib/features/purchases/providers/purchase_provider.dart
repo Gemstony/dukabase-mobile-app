@@ -30,11 +30,13 @@ class PurchaseProvider extends ChangeNotifier {
   Future<bool> recordPurchase({
     required String shopId,
     required String supplierId,
+    required String supplierName,
     required double totalAmount,
     required double paidAmount,
     required String paymentMethodId,
     required List<({
       String productId,
+      String productName,
       String batchCode,
       double quantity,
       double costPrice,
@@ -47,6 +49,7 @@ class PurchaseProvider extends ChangeNotifier {
     final success = await _purchaseService.recordPurchase(
       shopId: shopId,
       supplierId: supplierId,
+      supplierName: supplierName,
       totalAmount: totalAmount,
       paidAmount: paidAmount,
       paymentMethodId: paymentMethodId,

@@ -15,7 +15,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _currencyController = TextEditingController(text: 'USD');
+  final _currencyController = TextEditingController(text: 'TZS');
   bool _isLoading = false;
 
 

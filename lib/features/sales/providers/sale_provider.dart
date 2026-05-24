@@ -35,6 +35,7 @@ class SaleProvider extends ChangeNotifier {
     required List<({
       String batchId,
       String productId,
+      String productName,
       double quantity,
       double sellingPrice,
     })> items,
