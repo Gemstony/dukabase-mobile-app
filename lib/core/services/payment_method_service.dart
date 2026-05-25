@@ -91,4 +91,65 @@ class PaymentMethodService {
       return false;
     }
   }
+
+  // Update payment method name and type
+  Future<bool> updatePaymentMethod({
+    required String shopId,
+    required String methodId,
+    required String name,
+    required PaymentMethodType type,
+  }) async {
+    try {
+      await _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('paymentMethods')
+          .doc(methodId)
+          .update({
+        'name': name,
+        'type': type.name,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      print('Update payment method error: $e');
+      return false;
+    }
+  }
+
+  // Get sales for this payment method (paginated, 20 at a time)
+  Stream<QuerySnapshot> getSalesForMethod(String shopId, String methodId, {int limit = 20}) {
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('sales')
+        .where('paymentMethodId', isEqualTo: methodId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .snapshots();
+  }
+
+  // Get purchases for this payment method (paginated, 20 at a time)
+  Stream<QuerySnapshot> getPurchasesForMethod(String shopId, String methodId, {int limit = 20}) {
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('purchases')
+        .where('paymentMethodId', isEqualTo: methodId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .snapshots();
+  }
+
+  // Get expenses for this payment method (paginated, 20 at a time)
+  Stream<QuerySnapshot> getExpensesForMethod(String shopId, String methodId, {int limit = 20}) {
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('expenses')
+        .where('paymentMethodId', isEqualTo: methodId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .snapshots();
+  }
 }

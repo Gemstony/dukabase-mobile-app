@@ -60,6 +60,28 @@ class PaymentMethodProvider extends ChangeNotifier {
     return success;
   }
 
+  Future<bool> updatePaymentMethod({
+    required String shopId,
+    required String methodId,
+    required String name,
+    required PaymentMethodType type,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    final success = await _service.updatePaymentMethod(
+      shopId: shopId,
+      methodId: methodId,
+      name: name,
+      type: type,
+    );
+    _isLoading = false;
+    if (!success) {
+      _error = 'Failed to update payment method';
+    }
+    notifyListeners();
+    return success;
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();
