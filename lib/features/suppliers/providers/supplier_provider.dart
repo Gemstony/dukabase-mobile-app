@@ -52,6 +52,44 @@ class SupplierProvider extends ChangeNotifier {
     return false;
   }
 
+  Future<bool> updateSupplier({
+    required String shopId,
+    required String supplierId,
+    required String name,
+    required String phone,
+    String? email,
+    String? address,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    final success = await _supplierService.updateSupplier(
+      shopId: shopId,
+      supplierId: supplierId,
+      name: name,
+      phone: phone,
+      email: email,
+      address: address,
+    );
+    _isLoading = false;
+    if (!success) {
+      _error = 'Failed to update supplier';
+    }
+    notifyListeners();
+    return success;
+  }
+
+  Future<bool> deleteSupplier(String shopId, String supplierId) async {
+    _isLoading = true;
+    notifyListeners();
+    final success = await _supplierService.deleteSupplier(shopId, supplierId);
+    _isLoading = false;
+    if (!success) {
+      _error = 'Failed to delete supplier';
+    }
+    notifyListeners();
+    return success;
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();

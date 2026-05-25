@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/supplier_provider.dart';
 import '../../../core/models/shop_model.dart';
 import 'add_supplier_screen.dart';
+import 'supplier_details_screen.dart';
 import '../../../core/utils/currency_formatter.dart';
 
 class SupplierListScreen extends StatefulWidget {
@@ -25,27 +26,106 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<SupplierProvider>(context);
     return Scaffold(
-      appBar: AppBar(title: Text('Suppliers - ${widget.shop.name}')),
+      appBar: AppBar(
+        title: const Text('Suppliers', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
       body: provider.isLoading && provider.suppliers.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : provider.suppliers.isEmpty
               ? _buildEmptyState()
               : ListView.builder(
+                  padding: const EdgeInsets.all(16),
                   itemCount: provider.suppliers.length,
                   itemBuilder: (context, index) {
                     final supplier = provider.suppliers[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: ListTile(
-                        title: Text(supplier.name),
-                        subtitle: Text('${supplier.phone} | Balance: ${CurrencyFormatter.format(supplier.currentBalance, widget.shop.currency ?? "TZS")}'),
-                        trailing: Text(supplier.email ?? ''),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SupplierDetailsScreen(shop: widget.shop, supplier: supplier),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.local_shipping_outlined,
+                                    size: 32,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        supplier.name,
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        supplier.phone,
+                                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            'Balance: ',
+                                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                                          ),
+                                          Text(
+                                            CurrencyFormatter.format(supplier.currentBalance, widget.shop.currency ?? "TZS"),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: supplier.currentBalance > 0 ? Colors.red : Colors.green,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: const Text('New Supplier'),
         onPressed: () {
           Navigator.push(
             context,

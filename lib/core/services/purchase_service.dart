@@ -152,4 +152,19 @@ class PurchaseService {
               .toList(),
         );
   }
+
+  Stream<List<PurchaseModel>> getPurchasesForSupplier(String shopId, String supplierId) {
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('purchases')
+        .where('supplierId', isEqualTo: supplierId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PurchaseModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
+  }
 }

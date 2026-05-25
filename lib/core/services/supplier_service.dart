@@ -49,4 +49,47 @@ class SupplierService {
       return null;
     }
   }
+
+  Future<bool> updateSupplier({
+    required String shopId,
+    required String supplierId,
+    required String name,
+    required String phone,
+    String? email,
+    String? address,
+  }) async {
+    try {
+      await _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('suppliers')
+          .doc(supplierId)
+          .update({
+        'name': name,
+        'phone': phone,
+        'email': email,
+        'address': address,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      print('Update supplier error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteSupplier(String shopId, String supplierId) async {
+    try {
+      await _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('suppliers')
+          .doc(supplierId)
+          .delete();
+      return true;
+    } catch (e) {
+      print('Delete supplier error: $e');
+      return false;
+    }
+  }
 }
