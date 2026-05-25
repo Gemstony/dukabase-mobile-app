@@ -3,6 +3,8 @@ import 'package:dukabase/features/customers/screens/customer_list_screen.dart';
 import 'package:dukabase/features/dashboard/screens/owner_dashboard_screen.dart';
 import 'package:dukabase/features/dashboard/screens/staff_dashboard_screen.dart';
 import 'package:dukabase/features/expenses/screens/expense_list_screen.dart';
+import 'package:dukabase/features/invitations/screens/invitations_screen.dart';
+import 'package:dukabase/features/invitations/screens/owner_invitations_screen.dart';
 import 'package:dukabase/features/payment_methods/screens/payment_method_list_screen.dart';
 import 'package:dukabase/features/reports/screens/expense_report_screen.dart';
 import 'package:dukabase/features/reports/screens/income_report_screen.dart';
@@ -223,6 +225,35 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
+            ListTile(
+              leading: const Icon(Icons.mail_outline),
+              title: const Text('Invitations'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const InvitationsScreen()),
+                );
+              },
+            ),
+
+            if (authProvider.currentUser?.role == UserRole.owner &&
+                shopProvider.currentShop != null)
+              ListTile(
+                leading: const Icon(Icons.send),
+                title: const Text('Manage Invitations'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => OwnerInvitationsScreen(
+                        shop: shopProvider.currentShop!,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.backup),
               title: const Text('Backup & Restore'),
@@ -477,17 +508,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToBackup(BuildContext context, ShopModel? currentShop) {
-  if (currentShop == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select a shop first')),
+    if (currentShop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a shop first')),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => BackupScreen(shop: currentShop)),
     );
-    return;
   }
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => BackupScreen(shop: currentShop)),
-  );
-}
 
   Widget _buildEmptyState(BuildContext context) {
     final currentUser = Provider.of<AuthProvider>(context).currentUser;

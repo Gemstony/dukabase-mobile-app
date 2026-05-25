@@ -403,7 +403,7 @@ Stream<List<ProductModel>> getLowStockProductsStream(String shopId) {
     // Fetch all sale items and sum costPrice * quantity (if you stored costPrice in sale items)
     // This is a heavier operation; you may decide to skip or implement later.
     // We'll provide a placeholder that returns 0, but you can uncomment the following logic.
-    /*
+    
   for (var saleDoc in salesSnapshot.docs) {
     final itemsSnapshot = await saleDoc.reference.collection('items').get();
     for (var itemDoc in itemsSnapshot.docs) {
@@ -426,7 +426,7 @@ Stream<List<ProductModel>> getLowStockProductsStream(String shopId) {
       }
     }
   }
-  */
+  
 
     final grossProfit = totalRevenue - totalCogs;
     final netProfit = grossProfit - totalExpenses;

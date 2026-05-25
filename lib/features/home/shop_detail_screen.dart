@@ -1,4 +1,5 @@
 import 'package:dukabase/features/auth/providers/auth_provider.dart';
+import 'package:dukabase/features/invitations/screens/owner_invitations_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -28,9 +29,14 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
 
   Future<void> _refresh() async {
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    shopProvider.loadUserShops(shopProvider.shops.isNotEmpty ? shopProvider.shops.first.ownerId : '');
+    shopProvider.loadUserShops(
+      shopProvider.shops.isNotEmpty ? shopProvider.shops.first.ownerId : '',
+    );
     // Alternatively, fetch single shop:
-    final refreshed = await Provider.of<ShopProvider>(context, listen: false).getShopById(_shop.id);
+    final refreshed = await Provider.of<ShopProvider>(
+      context,
+      listen: false,
+    ).getShopById(_shop.id);
     if (refreshed != null) setState(() => _shop = refreshed);
   }
 
@@ -47,10 +53,18 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Shop'),
-        content: const Text('Are you sure? This will deactivate the shop (data remains but shop will be hidden). This action can be reversed by an admin.'),
+        content: const Text(
+          'Are you sure? This will deactivate the shop (data remains but shop will be hidden). This action can be reversed by an admin.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -59,12 +73,18 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
     final success = await provider.deleteShop(_shop.id);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Shop deactivated'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Shop deactivated'),
+          backgroundColor: Colors.green,
+        ),
       );
       Navigator.pop(context); // go back to shop list
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Delete failed'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(provider.error ?? 'Delete failed'),
+          backgroundColor: Colors.red,
+        ),
       );
       provider.clearError();
     }
@@ -87,14 +107,25 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                 if (value == 'backup') {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => BackupScreen(shop: _shop)),
+                    MaterialPageRoute(
+                      builder: (_) => BackupScreen(shop: _shop),
+                    ),
                   );
                 }
               },
               itemBuilder: (ctx) => [
                 const PopupMenuItem(value: 'edit', child: Text('Edit Shop')),
-                const PopupMenuItem(value: 'backup', child: Text('Backup & Restore')),
-                const PopupMenuItem(value: 'delete', child: Text('Delete Shop', style: TextStyle(color: Colors.red))),
+                const PopupMenuItem(
+                  value: 'backup',
+                  child: Text('Backup & Restore'),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text(
+                    'Delete Shop',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
               ],
             ),
         ],
@@ -113,65 +144,106 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Shop Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Shop Information',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Divider(),
                       _infoRow('Name', _shop.name),
-                      if (_shop.address != null) _infoRow('Address', _shop.address!),
+                      if (_shop.address != null)
+                        _infoRow('Address', _shop.address!),
                       if (_shop.phone != null) _infoRow('Phone', _shop.phone!),
                       _infoRow('Currency', _shop.currency),
                       _infoRow('Owner ID', _shop.ownerId),
-                      _infoRow('Created', DateFormat('dd MMM yyyy').format(_shop.createdAt)),
-                      _infoRow('Status', _shop.isActive ? 'Active' : 'Inactive'),
+                      _infoRow(
+                        'Created',
+                        DateFormat('dd MMM yyyy').format(_shop.createdAt),
+                      ),
+                      _infoRow(
+                        'Status',
+                        _shop.isActive ? 'Active' : 'Inactive',
+                      ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               // Quick Actions Card
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const Divider(),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          if (isOwner)
-                            ElevatedButton.icon(
-                              onPressed: _editShop,
-                              icon: const Icon(Icons.edit),
-                              label: const Text('Edit Details'),
-                            ),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => StaffListScreen(shop: _shop)),
-                              );
-                            },
-                            icon: const Icon(Icons.people),
-                            label: const Text('Manage Staff'),
+              if (isOwner)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Quick Actions',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => BackupScreen(shop: _shop)),
-                              );
-                            },
-                            icon: const Icon(Icons.backup),
-                            label: const Text('Backup & Restore'),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const Divider(),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            if (isOwner)
+                              ElevatedButton.icon(
+                                onPressed: _editShop,
+                                icon: const Icon(Icons.edit),
+                                label: const Text('Edit Details'),
+                              ),
+                            if (isOwner)
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          OwnerInvitationsScreen(shop: _shop),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.mail_outline),
+                                label: const Text('View Invitations'),
+                              ),
+                            if (isOwner)
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          StaffListScreen(shop: _shop),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.people),
+                                label: const Text('Manage Staff'),
+                              ),
+                            if (isOwner)
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BackupScreen(shop: _shop),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.backup),
+                                label: const Text('Backup & Restore'),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -187,7 +259,13 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
           ),
           Expanded(child: Text(value)),
         ],

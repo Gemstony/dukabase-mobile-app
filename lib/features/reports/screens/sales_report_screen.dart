@@ -65,12 +65,16 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<SalesReportProvider>(context);
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text('Sales Report - ${widget.shop.name}'),
+        title: Text('Sales Report - ${widget.shop.name}', style: const TextStyle(fontWeight: FontWeight.w600)),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         actions: [
           IconButton(
             onPressed: _pickDateRange,
-            icon: const Icon(Icons.calendar_today),
+            icon: const Icon(Icons.calendar_month_rounded, color: Colors.blue),
           ),
         ],
       ),
@@ -99,28 +103,53 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     if (provider.isLoadingDaily && provider.dailyReport.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    final totalSales = provider.dailyReport.fold(
-      0.0,
-      (sum, item) => sum + item.totalSales,
-    );
-    final totalTransactions = provider.dailyReport.fold(
-      0,
-      (sum, item) => sum + item.transactionCount,
-    );
-    final avgTransaction = totalTransactions > 0
-        ? totalSales / totalTransactions
-        : 0.0;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _kpiTile('Total Sales', CurrencyFormatter.format(totalSales, widget.shop.currency ?? 'TZS')),
-            _kpiTile('Transactions', totalTransactions.toDouble().toStringAsFixed(0)),
-            _kpiTile('Average', CurrencyFormatter.format(avgTransaction, widget.shop.currency ?? 'TZS')),
-          ],
+    final totalSales = provider.dailyReport.fold(0.0, (sum, item) => sum + item.totalSales);
+    final totalTransactions = provider.dailyReport.fold(0, (sum, item) => sum + item.transactionCount);
+    final avgTransaction = totalTransactions > 0 ? totalSales / totalTransactions : 0.0;
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green.shade400, Colors.teal.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.date_range, color: Colors.white70, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                '${DateFormat('dd MMM yyyy').format(_startDate)} - ${DateFormat('dd MMM yyyy').format(_endDate)}',
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _kpiTile('Total Sales', CurrencyFormatter.format(totalSales, widget.shop.currency ?? 'TZS')),
+              ),
+              Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+              Expanded(
+                child: _kpiTile('Orders', totalTransactions.toString()),
+              ),
+              Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+              Expanded(
+                child: _kpiTile('Avg Order', CurrencyFormatter.format(avgTransaction, widget.shop.currency ?? 'TZS')),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -128,13 +157,36 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
   Widget _kpiTile(String title, String value) {
     return Column(
       children: [
-        Text(title, style: const TextStyle(fontSize: 12)),
-        const SizedBox(height: 4),
+        Text(title, style: const TextStyle(fontSize: 13, color: Colors.white70)),
+        const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  Widget _buildCard({required String title, required Widget child}) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
     );
   }
 
@@ -143,133 +195,100 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (provider.dailyReport.isEmpty) {
-      return const Text('No sales data for this period');
+      return const Text('No sales data for this period', style: TextStyle(color: Colors.grey));
     }
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Daily Sales',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: DataTable(
-                columnSpacing: 12,
-                columns: const [
-                  DataColumn(label: Text('Date')),
-                  DataColumn(label: Text('Sales'), numeric: true),
-                  DataColumn(label: Text('Orders'), numeric: true),
-                ],
-                rows: provider.dailyReport.map((item) {
-                  return DataRow(
-                    cells: [
-                      DataCell(
-                        Text(DateFormat('dd MMM yyyy').format(item.date)),
-                      ),
-                      DataCell(Text(CurrencyFormatter.format(item.totalSales, widget.shop.currency ?? 'TZS'))),
-                      DataCell(Text(item.transactionCount.toString())),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
+    return _buildCard(
+      title: 'Daily Sales',
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowColor: MaterialStateProperty.all(Colors.grey.shade50),
+          columnSpacing: 24,
+          dataRowMinHeight: 48,
+          dataRowMaxHeight: 48,
+          columns: const [
+            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Sales', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
+            DataColumn(label: Text('Orders', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
           ],
+          rows: provider.dailyReport.map((item) {
+            return DataRow(
+              cells: [
+                DataCell(Text(DateFormat('dd MMM yyyy').format(item.date), style: const TextStyle(fontWeight: FontWeight.w500))),
+                DataCell(Text(CurrencyFormatter.format(item.totalSales, widget.shop.currency ?? 'TZS'), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
+                DataCell(Text(item.transactionCount.toString())),
+              ],
+            );
+          }).toList(),
         ),
       ),
     );
   }
 
   Widget _buildTopProductsList(SalesReportProvider provider) {
-    if (provider.isLoadingTop) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (provider.topProducts.isEmpty) {
-      return const Text('No product sales data');
-    }
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Top Selling Products',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    if (provider.isLoadingTop) return const Center(child: CircularProgressIndicator());
+    if (provider.topProducts.isEmpty) return const Text('No product sales data', style: TextStyle(color: Colors.grey));
+    
+    return _buildCard(
+      title: 'Top Selling Products',
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: provider.topProducts.length,
+        separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+        itemBuilder: (_, i) {
+          final item = provider.topProducts[i];
+          return ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(
+              backgroundColor: Colors.blue.shade50,
+              child: Text('${i + 1}', style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 8),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: provider.topProducts.length,
-              itemBuilder: (_, i) {
-                final item = provider.topProducts[i];
-                return ListTile(
-                  title: Text(item.productName),
-                  subtitle: Text(
-                    'Quantity sold: ${item.quantitySold.toStringAsFixed(2)}',
-                  ),
-                  trailing: Text(CurrencyFormatter.format(item.revenue, widget.shop.currency ?? 'TZS')),
-                );
-              },
+            title: Text(item.productName, style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text('Qty: ${item.quantitySold.toStringAsFixed(2)}', style: TextStyle(color: Colors.grey.shade600)),
+            trailing: Text(
+              CurrencyFormatter.format(item.revenue, widget.shop.currency ?? 'TZS'),
+              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 15),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildSalesHistoryList(SalesReportProvider provider) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Sales History',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            provider.salesHistory.isEmpty && !provider.isLoadingHistory
-                ? const Text('No sales found')
-                : ListView.builder(
-                    controller: _historyController,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount:
-                        provider.salesHistory.length +
-                        (provider.isLoadingHistory ? 1 : 0),
-                    itemBuilder: (_, i) {
-                      if (i == provider.salesHistory.length) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-                      final doc = provider.salesHistory[i];
-                      final data = doc.data();
-                      final date = (data['createdAt'] as Timestamp).toDate();
-                      return ListTile(
-                        title: Text('Sale #${doc.id.substring(0, 6)}'),
-                        subtitle: Text(
-                          DateFormat('dd MMM yyyy, HH:mm').format(date),
-                        ),
-                        trailing: Text(
-                          CurrencyFormatter.format((data['totalAmount'] as num).toDouble(), widget.shop.currency ?? 'TZS'),
-                        ),
-                      );
-                    },
+    return _buildCard(
+      title: 'Sales History',
+      child: provider.salesHistory.isEmpty && !provider.isLoadingHistory
+          ? const Text('No sales found', style: TextStyle(color: Colors.grey))
+          : ListView.separated(
+              controller: _historyController,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: provider.salesHistory.length + (provider.isLoadingHistory ? 1 : 0),
+              separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+              itemBuilder: (_, i) {
+                if (i == provider.salesHistory.length) {
+                  return const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()));
+                }
+                final doc = provider.salesHistory[i];
+                final data = doc.data();
+                final date = (data['createdAt'] as Timestamp).toDate();
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.green.shade50,
+                    child: Icon(Icons.receipt_long, color: Colors.green.shade500),
                   ),
-          ],
-        ),
-      ),
+                  title: Text('Sale #${doc.id.substring(0, 6).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(DateFormat('dd MMM yyyy, HH:mm').format(date), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  trailing: Text(
+                    CurrencyFormatter.format((data['totalAmount'] as num).toDouble(), widget.shop.currency ?? 'TZS'),
+                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

@@ -17,8 +17,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      Provider.of<DashboardProvider>(context, listen: false)
-          .loadDashboard(widget.shop.id);
+      Provider.of<DashboardProvider>(
+        context,
+        listen: false,
+      ).loadDashboard(widget.shop.id);
     });
   }
 
@@ -30,23 +32,23 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null
-              ? Center(child: Text('Error: ${provider.error}'))
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    provider.loadDashboard(widget.shop.id);
-                  },
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildKpiCards(provider.data!),
-                        const SizedBox(height: 24),
-                        _buildLowStockSection(provider.data!.lowStockItems),
-                      ],
-                    ),
-                  ),
+          ? Center(child: Text('Error: ${provider.error}'))
+          : RefreshIndicator(
+              onRefresh: () async {
+                provider.loadDashboard(widget.shop.id);
+              },
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildKpiCards(provider.data!),
+                    const SizedBox(height: 24),
+                    _buildLowStockSection(provider.data!.lowStockItems),
+                  ],
                 ),
+              ),
+            ),
     );
   }
 
@@ -60,11 +62,36 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       childAspectRatio: 1.5,
       children: [
         _kpiCard('Today Sales', data.todaySales, Icons.today, Colors.green),
-        _kpiCard('Today Expenses', data.todayExpenses, Icons.receipt, Colors.red),
-        _kpiCard('Today Profit', data.todayProfit, Icons.trending_up, Colors.blue),
-        _kpiCard('Total Products', data.totalProducts.toDouble(), Icons.inventory, Colors.purple),
-        _kpiCard('Low Stock Alerts', data.lowStockProducts.toDouble(), Icons.warning, Colors.orange),
-        _kpiCard('Active Suppliers', data.activeSuppliers.toDouble(), Icons.business, Colors.teal),
+        _kpiCard(
+          'Today Expenses',
+          data.todayExpenses,
+          Icons.receipt,
+          Colors.red,
+        ),
+        _kpiCard(
+          'Today Profit',
+          data.todayProfit,
+          Icons.trending_up,
+          Colors.blue,
+        ),
+        _kpiCard(
+          'Total Products',
+          data.totalProducts.toDouble(),
+          Icons.inventory,
+          Colors.purple,
+        ),
+        _kpiCard(
+          'Low Stock Alerts',
+          data.lowStockProducts.toDouble(),
+          Icons.warning,
+          Colors.orange,
+        ),
+        _kpiCard(
+          'Active Suppliers',
+          data.activeSuppliers.toDouble(),
+          Icons.business,
+          Colors.teal,
+        ),
       ],
     );
   }
@@ -72,22 +99,43 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   Widget _kpiCard(String title, double value, IconData icon, Color color) {
     return Card(
       elevation: 2,
+
       child: Padding(
         padding: const EdgeInsets.all(12),
+
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+
           children: [
-            Icon(icon, size: 32, color: color),
+            Icon(icon, size: 28, color: color),
+
             const SizedBox(height: 8),
+
             Text(
               title,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
-            Text(
-              value.toStringAsFixed(2),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+            const SizedBox(height: 6),
+
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+
+                child: Text(
+                  value.toStringAsFixed(2),
+
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+
+                  maxLines: 1,
+                ),
+              ),
             ),
           ],
         ),
@@ -113,7 +161,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Low Stock Alerts', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text(
+          'Low Stock Alerts',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         ListView.builder(
           shrinkWrap: true,
@@ -126,7 +177,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               child: ListTile(
                 leading: const Icon(Icons.warning, color: Colors.orange),
                 title: Text(item.name),
-                subtitle: Text('Stock: ${item.currentStock} ${item.unit} | Alert at: ${item.threshold}'),
+                subtitle: Text(
+                  'Stock: ${item.currentStock} ${item.unit} | Alert at: ${item.threshold}',
+                ),
                 trailing: TextButton(
                   onPressed: () {
                     // Navigate to product detail or purchase screen

@@ -342,71 +342,138 @@ class _AddPurchaseItemScreenState extends State<AddPurchaseItemScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add Item to Purchase')),
-      body: Padding(
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Add Item to Purchase'),
+    ),
+
+    body: SafeArea(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
+
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+
           children: [
+
             DropdownButtonFormField<ProductModel>(
-              decoration: const InputDecoration(labelText: 'Product *'),
+              decoration: const InputDecoration(
+                labelText: 'Product *',
+              ),
+
               items: widget.products.map((p) {
-                return DropdownMenuItem(value: p, child: Text(p.name));
+                return DropdownMenuItem(
+                  value: p,
+                  child: Text(
+                    p.name,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
               }).toList(),
-              onChanged: (value) => setState(() => _selectedProduct = value),
+
+              onChanged: (value) {
+                setState(() => _selectedProduct = value);
+              },
             ),
+
             const SizedBox(height: 12),
+
             TextFormField(
               controller: _batchCodeController,
-              decoration: const InputDecoration(labelText: 'Batch Code *'),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _quantityController,
-              decoration: const InputDecoration(labelText: 'Quantity *'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _costPriceController,
-              decoration: const InputDecoration(labelText: 'Cost Price *'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _sellingPriceController,
-              decoration: const InputDecoration(labelText: 'Selling Price *'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              title: const Text('Expiry Date (optional)'),
-              subtitle: _expiryDate == null
-                  ? const Text('Not set')
-                  : Text(_expiryDate!.toLocal().toString().split(' ')[0]),
-              trailing: IconButton(
-                icon: const Icon(Icons.calendar_today),
-                onPressed: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
-                  );
-                  if (date != null) setState(() => _expiryDate = date);
-                },
+              decoration: const InputDecoration(
+                labelText: 'Batch Code *',
               ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _save,
-              child: const Text('Add to Purchase'),
+
+            const SizedBox(height: 12),
+
+            TextFormField(
+              controller: _quantityController,
+              decoration: const InputDecoration(
+                labelText: 'Quantity *',
+              ),
+              keyboardType: TextInputType.number,
             ),
+
+            const SizedBox(height: 12),
+
+            TextFormField(
+              controller: _costPriceController,
+              decoration: const InputDecoration(
+                labelText: 'Cost Price *',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+
+            const SizedBox(height: 12),
+
+            TextFormField(
+              controller: _sellingPriceController,
+              decoration: const InputDecoration(
+                labelText: 'Selling Price *',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+
+            const SizedBox(height: 12),
+
+            Card(
+              child: ListTile(
+                title: const Text(
+                  'Expiry Date (optional)',
+                ),
+
+                subtitle: _expiryDate == null
+                    ? const Text('Not set')
+                    : Text(
+                        _expiryDate!
+                            .toLocal()
+                            .toString()
+                            .split(' ')[0],
+                      ),
+
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(
+                        const Duration(days: 365 * 5),
+                      ),
+                    );
+
+                    if (date != null) {
+                      setState(() => _expiryDate = date);
+                    }
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+
+              child: ElevatedButton(
+                onPressed: _save,
+
+                child: const Text(
+                  'Add to Purchase',
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
