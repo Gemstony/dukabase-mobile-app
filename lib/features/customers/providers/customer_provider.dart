@@ -50,6 +50,42 @@ class CustomerProvider extends ChangeNotifier {
     return false;
   }
 
+  Future<bool> updateCustomer({
+    required String shopId,
+    required String customerId,
+    required String name,
+    required String phone,
+    String? email,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    final success = await _customerService.updateCustomer(
+      shopId: shopId,
+      customerId: customerId,
+      name: name,
+      phone: phone,
+      email: email,
+    );
+    _isLoading = false;
+    if (!success) {
+      _error = 'Failed to update customer';
+    }
+    notifyListeners();
+    return success;
+  }
+
+  Future<bool> deleteCustomer(String shopId, String customerId) async {
+    _isLoading = true;
+    notifyListeners();
+    final success = await _customerService.deleteCustomer(shopId, customerId);
+    _isLoading = false;
+    if (!success) {
+      _error = 'Failed to delete customer';
+    }
+    notifyListeners();
+    return success;
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();

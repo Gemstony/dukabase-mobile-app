@@ -67,4 +67,45 @@ class CustomerService {
       return null;
     }
   }
+
+  Future<bool> updateCustomer({
+    required String shopId,
+    required String customerId,
+    required String name,
+    required String phone,
+    String? email,
+  }) async {
+    try {
+      await _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('customers')
+          .doc(customerId)
+          .update({
+        'name': name,
+        'phone': phone,
+        'email': email,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      print('Update customer error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteCustomer(String shopId, String customerId) async {
+    try {
+      await _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('customers')
+          .doc(customerId)
+          .delete();
+      return true;
+    } catch (e) {
+      print('Delete customer error: $e');
+      return false;
+    }
+  }
 }
