@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/shop_service.dart';
 import '../../../core/models/shop_model.dart';
 
@@ -26,11 +27,23 @@ class ShopProvider extends ChangeNotifier {
     _shopService
         .getUserShops(userId)
         .listen(
-          (shops) {
+          (shops) async {
             _shops = shops;
             _isLoading = false;
             _error = null;
             print('✅ ShopProvider: received ${shops.length} shops');
+            
+            // Try to restore previous current shop
+            final prefs = await SharedPreferences.getInstance();
+            final savedShopId = prefs.getString('currentShopId');
+            if (savedShopId != null && _currentShop == null) {
+              try {
+                _currentShop = shops.firstWhere((s) => s.id == savedShopId);
+              } catch (_) {
+                // Shop not found in list, maybe it was deleted or permissions changed
+              }
+            }
+            
             notifyListeners();
           },
           onError: (error) {
@@ -72,8 +85,17 @@ class ShopProvider extends ChangeNotifier {
     }
   }
 
-  void setCurrentShop(ShopModel shop) {
+  void setCurrentShop(ShopModel shop) async {
     _currentShop = shop;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('currentShopId', shop.id);
+    notifyListeners();
+  }
+
+  void clearCurrentShop() async {
+    _currentShop = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('currentShopId');
     notifyListeners();
   }
 

@@ -3,6 +3,11 @@ import 'package:provider/provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../core/models/shop_model.dart';
 import '../../../core/models/dashboard_data.dart';
+import '../../sales/screens/new_sale_screen.dart';
+import '../../sales/screens/sales_list_screen.dart';
+import '../../purchases/screens/purchases_list_screen.dart';
+import '../../expenses/screens/expense_list_screen.dart';
+import '../../products/screens/product_list_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   final ShopModel shop;
@@ -44,6 +49,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   children: [
                     _buildKpiCards(provider.data!),
                     const SizedBox(height: 24),
+                    _buildQuickActions(),
+                    const SizedBox(height: 24),
                     _buildLowStockSection(provider.data!.lowStockItems),
                   ],
                 ),
@@ -59,86 +66,128 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       crossAxisCount: 2,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.3,
       children: [
-        _kpiCard('Today Sales', data.todaySales, Icons.today, Colors.green),
-        _kpiCard(
-          'Today Expenses',
-          data.todayExpenses,
-          Icons.receipt,
-          Colors.red,
+        _kpiCard('Today Sales', data.todaySales, Icons.trending_up, const [Color(0xFF38ef7d), Color(0xFF11998e)]),
+        _kpiCard('Today Expenses', data.todayExpenses, Icons.receipt_long, const [Color(0xFFff9966), Color(0xFFff5e62)]),
+        _kpiCard('Today Profit', data.todayProfit, Icons.account_balance_wallet, const [Color(0xFF56CCF2), Color(0xFF2F80ED)]),
+        _kpiCard('Total Products', data.totalProducts.toDouble(), Icons.inventory_2, const [Color(0xFFa8c0ff), Color(0xFF3f2b96)]),
+        _kpiCard('Low Stock Alerts', data.lowStockProducts.toDouble(), Icons.warning_amber_rounded, const [Color(0xFFF2C94C), Color(0xFFF2994A)]),
+        _kpiCard('Active Suppliers', data.activeSuppliers.toDouble(), Icons.local_shipping, const [Color(0xFF1D976C), Color(0xFF93F9B9)]),
+      ],
+    );
+  }
+
+  Widget _kpiCard(String title, double value, IconData icon, List<Color> gradientColors) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        _kpiCard(
-          'Today Profit',
-          data.todayProfit,
-          Icons.trending_up,
-          Colors.blue,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors.last.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 32, color: Colors.white),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value.toStringAsFixed(value == value.truncateToDouble() ? 0 : 2),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Text(
+            'Quick Actions',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
-        _kpiCard(
-          'Total Products',
-          data.totalProducts.toDouble(),
-          Icons.inventory,
-          Colors.purple,
-        ),
-        _kpiCard(
-          'Low Stock Alerts',
-          data.lowStockProducts.toDouble(),
-          Icons.warning,
-          Colors.orange,
-        ),
-        _kpiCard(
-          'Active Suppliers',
-          data.activeSuppliers.toDouble(),
-          Icons.business,
-          Colors.teal,
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 2.5,
+          children: [
+            _actionButton('New Sale', Icons.sell, Colors.blue.shade600, () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => NewSaleScreen(shop: widget.shop)));
+            }),
+            _actionButton('Sales List', Icons.list_alt, Colors.teal.shade600, () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => SalesListScreen(shop: widget.shop)));
+            }),
+            _actionButton('Purchases', Icons.inventory_2, Colors.purple.shade600, () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => PurchasesListScreen(shop: widget.shop)));
+            }),
+            _actionButton('Expenses', Icons.receipt_long, Colors.orange.shade600, () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => ExpenseListScreen(shop: widget.shop)));
+            }),
+          ],
         ),
       ],
     );
   }
 
-  Widget _kpiCard(String title, double value, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-
-          children: [
-            Icon(icon, size: 28, color: color),
-
-            const SizedBox(height: 8),
-
-            Text(
-              title,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-              textAlign: TextAlign.center,
-              maxLines: 2,
+  Widget _actionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
-
-            const SizedBox(height: 6),
-
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-
-                child: Text(
-                  value.toStringAsFixed(2),
-
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-
-                  maxLines: 1,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

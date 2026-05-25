@@ -34,6 +34,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _shopsRequested = false;
+  bool _hasCheckedAutoRedirect = false;
 
   @override
   void initState() {
@@ -55,26 +56,62 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final currentUser = authProvider.currentUser;
 
+    // Auto-redirect logic
+    if (!_hasCheckedAutoRedirect && shopProvider.currentShop != null && currentUser != null) {
+      _hasCheckedAutoRedirect = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (currentUser.role == UserRole.owner) {
+          _navigateToOwnerDashboard(context, shopProvider.currentShop);
+        } else if (currentUser.role == UserRole.staff) {
+          _navigateToStaffDashboard(context, shopProvider.currentShop);
+        }
+      });
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text('DukaBase')),
+      appBar: AppBar(
+        title: const Text(
+          'DukaBase',
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    child: Text(
+                      currentUser?.name.isNotEmpty == true ? currentUser!.name[0].toUpperCase() : 'U',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     currentUser?.name ?? 'User',
-                    style: const TextStyle(color: Colors.white, fontSize: 20),
+                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     currentUser?.email ?? '',
-                    style: const TextStyle(color: Colors.white70),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
@@ -172,58 +209,63 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
-            // Reports section header
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'REPORTS',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+            if (authProvider.currentUser?.role == UserRole.owner)
+              // Reports section header
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  'REPORTS',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
                 ),
               ),
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.shopping_cart),
-              title: const Text('Sales Report'),
-              onTap: () {
-                Navigator.pop(context);
-                _navigateToSalesReport(context, shopProvider.currentShop);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_shopping_cart),
-              title: const Text('Purchases Report'),
-              onTap: () {
-                Navigator.pop(context);
-                _navigateToPurchasesReport(context, shopProvider.currentShop);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt),
-              title: const Text('Expenses Report'),
-              onTap: () {
-                Navigator.pop(context);
-                _navigateToExpensesReport(context, shopProvider.currentShop);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.inventory),
-              title: const Text('Product Report'),
-              onTap: () {
-                Navigator.pop(context);
-                _navigateToProductReport(context, shopProvider.currentShop);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.trending_up),
-              title: const Text('Income Report'),
-              onTap: () {
-                Navigator.pop(context);
-                _navigateToIncomeReport(context, shopProvider.currentShop);
-              },
-            ),
+            if (authProvider.currentUser?.role == UserRole.owner)
+              ListTile(
+                leading: const Icon(Icons.shopping_cart),
+                title: const Text('Sales Report'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToSalesReport(context, shopProvider.currentShop);
+                },
+              ),
+            if (authProvider.currentUser?.role == UserRole.owner)
+              ListTile(
+                leading: const Icon(Icons.add_shopping_cart),
+                title: const Text('Purchases Report'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToPurchasesReport(context, shopProvider.currentShop);
+                },
+              ),
+            if (authProvider.currentUser?.role == UserRole.owner)
+              ListTile(
+                leading: const Icon(Icons.receipt),
+                title: const Text('Expenses Report'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToExpensesReport(context, shopProvider.currentShop);
+                },
+              ),
+            if (authProvider.currentUser?.role == UserRole.owner)
+              ListTile(
+                leading: const Icon(Icons.inventory),
+                title: const Text('Product Report'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToProductReport(context, shopProvider.currentShop);
+                },
+              ),
+            if (authProvider.currentUser?.role == UserRole.owner)
+              ListTile(
+                leading: const Icon(Icons.trending_up),
+                title: const Text('Income Report'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToIncomeReport(context, shopProvider.currentShop);
+                },
+              ),
 
             ListTile(
               leading: const Icon(Icons.mail_outline),
@@ -254,14 +296,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.backup),
-              title: const Text('Backup & Restore'),
-              onTap: () {
-                Navigator.pop(context);
-                _navigateToBackup(context, shopProvider.currentShop);
-              },
-            ),
+            if (authProvider.currentUser?.role == UserRole.owner)
+              ListTile(
+                leading: const Icon(Icons.backup),
+                title: const Text('Backup & Restore'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToBackup(context, shopProvider.currentShop);
+                },
+              ),
 
             const Divider(),
             ListTile(
@@ -281,10 +324,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const Center(child: CircularProgressIndicator())
           : shopProvider.shops.isEmpty
           ? _buildEmptyState(context)
-          : _buildShopList(context, shopProvider.shops, currentUser!),
+          : Container(
+              color: Colors.grey[50],
+              child: _buildShopList(context, shopProvider.shops, currentUser!),
+            ),
       floatingActionButton: (currentUser?.role == UserRole.owner)
-          ? FloatingActionButton(
-              child: const Icon(Icons.add),
+          ? FloatingActionButton.extended(
+              icon: const Icon(Icons.add),
+              label: const Text('New Shop'),
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -523,29 +572,53 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildEmptyState(BuildContext context) {
     final currentUser = Provider.of<AuthProvider>(context).currentUser;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.store_outlined, size: 80, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text(
-            currentUser?.role == UserRole.owner
-                ? 'You haven\'t created any shop yet'
-                : 'No shops assigned yet',
-            style: const TextStyle(fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          if (currentUser?.role == UserRole.owner)
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CreateShopScreen()),
-                );
-              },
-              child: const Text('Create Your First Shop'),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.storefront, size: 80, color: Theme.of(context).primaryColor),
             ),
-        ],
+            const SizedBox(height: 24),
+            Text(
+              currentUser?.role == UserRole.owner
+                  ? 'No Shops Created Yet'
+                  : 'No Shops Assigned',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              currentUser?.role == UserRole.owner
+                  ? 'Create your first shop to start managing your business.'
+                  : 'You have not been assigned to any shop yet.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
+            if (currentUser?.role == UserRole.owner)
+              ElevatedButton.icon(
+                icon: const Icon(Icons.add_business),
+                label: const Text('Create Your First Shop'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CreateShopScreen()),
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -555,34 +628,213 @@ class _HomeScreenState extends State<HomeScreen> {
     List<ShopModel> shops,
     UserModel currentUser,
   ) {
+    final currentShop = Provider.of<ShopProvider>(context).currentShop;
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: shops.length,
+      itemCount: shops.length + 1, // +1 for the Active Shop header/card
       itemBuilder: (context, index) {
-        final shop = shops[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: const Icon(Icons.store, size: 40),
-            title: Text(
-              shop.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+        if (index == 0) {
+          // Active Shop Card
+          if (currentShop != null) {
+            return _buildActiveShopCard(context, currentShop, currentUser);
+          } else {
+            return const Padding(
+              padding: EdgeInsets.only(bottom: 16),
+              child: Text(
+                'Available Shops',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
+              ),
+            );
+          }
+        }
+
+        final shop = shops[index - 1];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                Provider.of<ShopProvider>(
+                  context,
+                  listen: false,
+                ).setCurrentShop(shop);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => ShopDetailScreen(shop: shop)),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.storefront,
+                        size: 32,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            shop.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(Icons.location_on, size: 14, color: Colors.grey[600]),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  shop.address ?? 'No address provided',
+                                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            subtitle: Text(shop.address ?? 'No address'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Provider.of<ShopProvider>(
-                context,
-                listen: false,
-              ).setCurrentShop(shop);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ShopDetailScreen(shop: shop)),
-              );
-            },
           ),
         );
       },
+    );
+  }
+
+  Widget _buildActiveShopCard(BuildContext context, ShopModel shop, UserModel currentUser) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            if (currentUser.role == UserRole.owner) {
+              _navigateToOwnerDashboard(context, shop);
+            } else if (currentUser.role == UserRole.staff) {
+              _navigateToStaffDashboard(context, shop);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.store,
+                    size: 32,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Active Shop',
+                        style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        shop.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.arrow_forward, size: 14, color: Theme.of(context).primaryColor),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

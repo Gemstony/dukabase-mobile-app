@@ -7,6 +7,7 @@ import '../../products/providers/product_provider.dart';
 import '../../../core/models/shop_model.dart';
 import '../../../core/models/supplier_model.dart';
 import '../../../core/models/product_model.dart';
+import 'purchases_list_screen.dart';
 
 class PurchaseScreen extends StatefulWidget {
   final ShopModel shop;
@@ -122,7 +123,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => PurchasesListScreen(shop: widget.shop)),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

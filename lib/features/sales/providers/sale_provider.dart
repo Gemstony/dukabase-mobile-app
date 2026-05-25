@@ -21,10 +21,13 @@ class SaleProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
     }, onError: (error) {
-      _error = error.toString();
       _isLoading = false;
       notifyListeners();
     });
+  }
+
+  Stream<List<SaleModel>> getTodaySalesStream(String shopId) {
+    return _saleService.getTodaySales(shopId);
   }
 
   Future<bool> recordSale({

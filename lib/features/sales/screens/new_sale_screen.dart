@@ -8,6 +8,7 @@ import '../../products/providers/product_provider.dart';
 import '../../../core/models/shop_model.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/batch_model.dart';
+import 'sales_list_screen.dart';
 
 class NewSaleScreen extends StatefulWidget {
   final ShopModel shop;
@@ -268,7 +269,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
     if (success) {
       _showSnackBar('Sale recorded successfully', isError: false);
-      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => SalesListScreen(shop: widget.shop)),
+      );
     } else {
       _showSnackBar(saleProvider.error ?? 'Failed to record sale');
       saleProvider.clearError();

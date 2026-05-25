@@ -133,6 +133,23 @@ class SaleService {
         );
   }
 
+  Stream<List<SaleModel>> getTodaySales(String shopId) {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('sales')
+        .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => SaleModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
+  }
+
   Stream<List<SaleModel>> getSalesForCustomer(
     String shopId,
     String customerId,
