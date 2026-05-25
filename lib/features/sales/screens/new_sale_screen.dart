@@ -19,6 +19,7 @@ class NewSaleScreen extends StatefulWidget {
 }
 
 class _NewSaleScreenState extends State<NewSaleScreen> {
+  final _formKey = GlobalKey<FormState>();
   String? _selectedPaymentMethodId;
   final List<CartItem> _cart = [];
   String? _selectedCustomerId;
@@ -242,6 +243,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       _showSnackBar('Add at least one item');
       return;
     }
+    if (_selectedPaymentMethodId == null) {
+      _showSnackBar('Please select a payment method');
+      return;
+    }
+    if (!_formKey.currentState!.validate()) return;
+    
     final paid = double.tryParse(_paidController.text);
     if (paid == null || paid < 0) {
       _showSnackBar('Enter valid paid amount');
@@ -285,11 +292,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final paymentProvider = Provider.of<PaymentMethodProvider>(context);
     return Scaffold(
       appBar: AppBar(title: const Text('New Sale')),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
               children: [
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Customer'),
@@ -362,11 +371,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                TextFormField(
                   controller: _paidController,
-                  decoration: const InputDecoration(labelText: 'Amount Paid'),
+                  decoration: const InputDecoration(labelText: 'Amount Paid *'),
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Required';
+                    if (double.tryParse(v) == null) return 'Invalid number';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -400,6 +414,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

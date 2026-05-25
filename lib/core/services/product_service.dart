@@ -105,6 +105,36 @@ class ProductService {
     }
   }
 
+  // Update product details
+  Future<bool> updateProduct({
+    required String shopId,
+    required String productId,
+    required String name,
+    required String unit,
+    required double defaultSellingPrice,
+    required double lowStockAlert,
+  }) async {
+    try {
+      final productRef = _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('products')
+          .doc(productId);
+          
+      await productRef.update({
+        'name': name,
+        'unit': unit,
+        'defaultSellingPrice': defaultSellingPrice,
+        'lowStockAlert': lowStockAlert,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      print('Update product error: $e');
+      return false;
+    }
+  }
+
   // Get batches for a product (for offline use)
   Stream<List<BatchModel>> getBatches(String shopId, String productId) {
     return _firestore

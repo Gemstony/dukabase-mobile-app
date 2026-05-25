@@ -70,9 +70,25 @@ class DukaBaseApp extends StatelessWidget {
       child: MaterialApp(
         title: 'DukaBase',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          primarySwatch: Colors.deepPurple,
+          scaffoldBackgroundColor: Colors.grey[50],
+          primaryColor: Colors.deepPurple,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.blue,
+            backgroundColor: Colors.deepPurple,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            backgroundColor: Colors.deepPurple,
             foregroundColor: Colors.white,
           ),
         ),

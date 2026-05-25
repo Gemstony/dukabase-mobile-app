@@ -88,6 +88,12 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       ).showSnackBar(const SnackBar(content: Text('Add at least one item')));
       return;
     }
+    if (_selectedPaymentMethodId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a payment method')));
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     final purchaseProvider = Provider.of<PurchaseProvider>(

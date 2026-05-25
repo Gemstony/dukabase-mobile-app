@@ -72,7 +72,7 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<MemberRole>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 decoration: const InputDecoration(labelText: 'Role *'),
                 items: const [
                   DropdownMenuItem(value: MemberRole.staff, child: Text('Staff')),

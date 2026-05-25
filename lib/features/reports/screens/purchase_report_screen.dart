@@ -205,7 +205,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          headingRowColor: MaterialStateProperty.all(Colors.grey.shade50),
+          headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
           columnSpacing: 24,
           dataRowMinHeight: 48,
           dataRowMaxHeight: 48,
@@ -238,7 +238,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: provider.topProducts.length,
-        separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+        separatorBuilder: (_, _) => Divider(color: Colors.grey.shade100),
         itemBuilder: (_, i) {
           final item = provider.topProducts[i];
           return ListTile(
@@ -269,7 +269,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: provider.supplierSummary.length,
-        separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+        separatorBuilder: (_, _) => Divider(color: Colors.grey.shade100),
         itemBuilder: (_, i) {
           final supp = provider.supplierSummary[i];
           return ListTile(
@@ -299,7 +299,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: provider.purchaseHistory.length + (provider.isLoadingHistory ? 1 : 0),
-              separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+              separatorBuilder: (_, _) => Divider(color: Colors.grey.shade100),
               itemBuilder: (_, i) {
                 if (i == provider.purchaseHistory.length) {
                   return const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()));

@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'DukaBase',
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
         ),
-        centerTitle: true,
+        centerTitle: true, 
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,

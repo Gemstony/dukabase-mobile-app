@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/models/invitation_model.dart';
 import '../../staff/providers/staff_provider.dart';
 import '../../../core/models/shop_model.dart';
 

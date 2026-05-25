@@ -99,7 +99,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedCurrency,
+                initialValue: _selectedCurrency,
                 decoration: const InputDecoration(labelText: 'Currency'),
                 items: _currencies
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))

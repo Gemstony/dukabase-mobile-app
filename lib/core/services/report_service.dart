@@ -421,7 +421,7 @@ Stream<List<ProductModel>> getLowStockProductsStream(String shopId) {
           .doc(batchId)
           .get();
       if (batchDoc.exists) {
-        final costPrice = (batchDoc.data()?['costPrice'] as num)?.toDouble() ?? 0;
+        final costPrice = (batchDoc.data()?['costPrice'] as num).toDouble() ?? 0;
         totalCogs += quantity * costPrice;
       }
     }

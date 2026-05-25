@@ -165,7 +165,7 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: provider.categorySummary.length,
-        separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+        separatorBuilder: (_, _) => Divider(color: Colors.grey.shade100),
         itemBuilder: (_, i) {
           final item = provider.categorySummary[i];
           return ListTile(
@@ -195,7 +195,7 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: provider.expensesHistory.length + (provider.isLoadingHistory ? 1 : 0),
-              separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+              separatorBuilder: (_, _) => Divider(color: Colors.grey.shade100),
               itemBuilder: (_, i) {
                 if (i == provider.expensesHistory.length) {
                   return const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()));

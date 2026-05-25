@@ -91,7 +91,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedCurrency,
+                initialValue: _selectedCurrency,
                 decoration: const InputDecoration(labelText: 'Currency'),
                 items: _currencies.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                 onChanged: (val) => setState(() => _selectedCurrency = val!),

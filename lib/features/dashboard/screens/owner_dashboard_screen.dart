@@ -7,7 +7,6 @@ import '../../sales/screens/new_sale_screen.dart';
 import '../../sales/screens/sales_list_screen.dart';
 import '../../purchases/screens/purchases_list_screen.dart';
 import '../../expenses/screens/expense_list_screen.dart';
-import '../../products/screens/product_list_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   final ShopModel shop;

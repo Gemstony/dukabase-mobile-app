@@ -56,6 +56,32 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateProduct({
+    required String shopId,
+    required String productId,
+    required String name,
+    required String unit,
+    required double defaultSellingPrice,
+    required double lowStockAlert,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    final success = await _productService.updateProduct(
+      shopId: shopId,
+      productId: productId,
+      name: name,
+      unit: unit,
+      defaultSellingPrice: defaultSellingPrice,
+      lowStockAlert: lowStockAlert,
+    );
+    _isLoading = false;
+    if (!success) {
+      _error = 'Failed to update product';
+    }
+    notifyListeners();
+    return success;
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();

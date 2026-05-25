@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/models/shop_model.dart';
-import '../../core/utils/currency_formatter.dart';
 import '../shops/providers/shop_provider.dart';
 import '../staff/screens/staff_list_screen.dart'; // adjust import
 import '../../features/backup/screens/backup_screen.dart';

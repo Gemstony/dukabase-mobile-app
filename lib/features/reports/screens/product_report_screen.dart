@@ -165,7 +165,7 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: provider.lowStockProducts.length,
-        separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+        separatorBuilder: (_, _) => Divider(color: Colors.grey.shade100),
         itemBuilder: (_, i) {
           final p = provider.lowStockProducts[i];
           return ListTile(
@@ -205,7 +205,7 @@ class _ProductReportScreenState extends State<ProductReportScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: provider.products.length + (provider.hasMoreProducts && provider.isLoadingProducts ? 1 : 0),
-                  separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100),
+                  separatorBuilder: (_, _) => Divider(color: Colors.grey.shade100),
                   itemBuilder: (_, i) {
                     if (i == provider.products.length) {
                       return const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()));
