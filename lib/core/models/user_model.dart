@@ -9,6 +9,7 @@ class UserModel {
   final UserRole role;
   final DateTime createdAt;
   final String? photoUrl;
+  final String? phone; 
   final bool isActive;
 
   UserModel({
@@ -18,6 +19,7 @@ class UserModel {
     required this.role,
     required this.createdAt,
     this.photoUrl,
+    this.phone,
     this.isActive = true,
   });
 
@@ -30,6 +32,7 @@ class UserModel {
       'role': role.name,
       'createdAt': createdAt,
       'photoUrl': photoUrl,
+      'phone': phone,
       'isActive': isActive,
     };
   }
@@ -45,6 +48,7 @@ class UserModel {
       ),
       createdAt: (map['createdAt'] as Timestamp).toDate(), // ✅ convert
       photoUrl: map['photoUrl'] as String?,
+      phone: map['phone'] as String?,
       isActive: map['isActive'] ?? true,
     );
   }

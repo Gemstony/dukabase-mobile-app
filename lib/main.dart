@@ -26,6 +26,8 @@ import 'features/reports/providers/product_report_provider.dart';
 import 'features/reports/providers/income_report_provider.dart';
 import 'features/reports/providers/expense_report_provider.dart';
 
+import 'features/staff/providers/staff_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -62,6 +64,8 @@ class DukaBaseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProductReportProvider()),
         ChangeNotifierProvider(create: (_) => IncomeReportProvider()),
         ChangeNotifierProvider(create: (_) => ExpenseReportProvider()),
+
+        ChangeNotifierProvider(create: (_) => StaffProvider()),
       ],
       child: MaterialApp(
         title: 'DukaBase',

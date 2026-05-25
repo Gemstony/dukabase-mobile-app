@@ -19,8 +19,8 @@ class ShopMemberModel {
     return {
       'shopId': shopId,
       'userId': userId,
-      'role': role.name,
-      'joinedAt': joinedAt,
+      'role': role.toString().split('.').last,  // fixed
+      'joinedAt': Timestamp.fromDate(joinedAt),
     };
   }
 
@@ -28,8 +28,10 @@ class ShopMemberModel {
     return ShopMemberModel(
       shopId: map['shopId'] as String,
       userId: map['userId'] as String,
-      role: MemberRole.values.firstWhere((e) => e.name == map['role']),
-      joinedAt: (map['joinedAt'] as Timestamp).toDate(), // ✅ convert
+      role: MemberRole.values.firstWhere(
+        (e) => e.toString().split('.').last == map['role'],
+      ),
+      joinedAt: (map['joinedAt'] as Timestamp).toDate(),
     );
   }
 }
