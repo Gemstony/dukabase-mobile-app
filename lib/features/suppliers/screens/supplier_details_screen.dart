@@ -426,7 +426,7 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> with Sing
                         // ignore: use_build_context_synchronously
                         final provider = Provider.of<SupplierProvider>(context, listen: false);
                         
-                        final success = await provider.updateSupplier(
+                        final result = await provider.updateSupplier(
                           shopId: widget.shop.id,
                           supplierId: _currentSupplier.id,
                           name: nameController.text.trim(),
@@ -438,7 +438,7 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> with Sing
                         // ignore: use_build_context_synchronously
                         Navigator.pop(context); // close loading
                         
-                        if (success) {
+                        if (result.success) {
                           setState(() {
                             // Rebuild UI with local modifications
                             _currentSupplier = SupplierModel(
@@ -454,9 +454,12 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> with Sing
                               updatedAt: DateTime.now(),
                             );
                           });
+                          final message = result.pendingSync
+                              ? 'Supplier update saved offline — will sync when you\'re back online'
+                              : 'Supplier updated successfully';
                           // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Supplier updated successfully'), backgroundColor: Colors.green),
+                            SnackBar(content: Text(message), backgroundColor: Colors.green),
                           );
                         } else {
                           // ignore: use_build_context_synchronously
@@ -501,18 +504,20 @@ class _SupplierDetailsScreenState extends State<SupplierDetailsScreen> with Sing
               );
               
               final provider = Provider.of<SupplierProvider>(context, listen: false);
-              final success = await provider.deleteSupplier(widget.shop.id, _currentSupplier.id);
+              final result = await provider.deleteSupplier(
+                widget.shop.id,
+                _currentSupplier.id,
+              );
               
               // ignore: use_build_context_synchronously
               Navigator.pop(context); // Close loading
               
-              if (success) {
+              if (result.success) {
+                final message = result.pendingSync
+                    ? 'Supplier deletion saved offline — will sync when you\'re back online'
+                    : 'Supplier deleted successfully';
                 // ignore: use_build_context_synchronously
-                Navigator.pop(context); // Go back to list screen
-                // ignore: use_build_context_synchronously
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Supplier deleted successfully'), backgroundColor: Colors.green),
-                );
+                Navigator.pop(context, message); // Go back to list screen
               } else {
                 // ignore: use_build_context_synchronously
                 ScaffoldMessenger.of(context).showSnackBar(

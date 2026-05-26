@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/models/supplier_model.dart';
 import '../providers/supplier_provider.dart';
 import '../../../core/models/shop_model.dart';
 import 'add_supplier_screen.dart';
@@ -56,14 +57,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => SupplierDetailsScreen(shop: widget.shop, supplier: supplier),
-                              ),
-                            );
-                          },
+                          onTap: () => _openSupplierDetail(supplier),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -126,14 +120,39 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('New Supplier'),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddSupplierScreen(shop: widget.shop),
-            ),
-          );
-        },
+        onPressed: _openAddSupplier,
+      ),
+    );
+  }
+
+  Future<void> _openSupplierDetail(SupplierModel supplier) async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SupplierDetailsScreen(shop: widget.shop, supplier: supplier),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  Future<void> _openAddSupplier() async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddSupplierScreen(shop: widget.shop),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
       ),
     );
   }
@@ -148,14 +167,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
           const Text('No suppliers yet'),
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddSupplierScreen(shop: widget.shop),
-                ),
-              );
-            },
+            onPressed: _openAddSupplier,
             child: const Text('Add Supplier'),
           ),
         ],

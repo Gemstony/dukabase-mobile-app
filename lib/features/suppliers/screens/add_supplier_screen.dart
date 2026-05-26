@@ -34,7 +34,7 @@ class _AddSupplierScreenState extends State<AddSupplierScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     final provider = Provider.of<SupplierProvider>(context, listen: false);
-    final success = await provider.createSupplier(
+    final result = await provider.createSupplier(
       shopId: widget.shop.id,
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
@@ -42,12 +42,13 @@ class _AddSupplierScreenState extends State<AddSupplierScreen> {
       address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
       openingBalance: double.tryParse(_balanceController.text) ?? 0,
     );
+    if (!mounted) return;
     setState(() => _isLoading = false);
-    if (success) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Supplier added'), backgroundColor: Colors.green),
-      );
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Supplier saved offline — will sync when you\'re back online'
+          : 'Supplier added successfully';
+      Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(provider.error ?? 'Failed'), backgroundColor: Colors.red),

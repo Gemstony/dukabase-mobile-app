@@ -119,7 +119,7 @@ class PurchaseService {
             .doc(supplierId);
         batch.update(supplierRef, {
           'currentBalance': FieldValue.increment(purchase.balance),
-          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
       } else if (paidAmount > totalAmount) {
         final supplierRef = _firestore
@@ -129,7 +129,7 @@ class PurchaseService {
             .doc(supplierId);
         batch.update(supplierRef, {
           'currentBalance': FieldValue.increment(-(paidAmount - totalAmount)),
-          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
       }
 

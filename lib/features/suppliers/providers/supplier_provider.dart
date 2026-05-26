@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/supplier_service.dart';
 import '../../../core/models/supplier_model.dart';
 
@@ -27,7 +28,7 @@ class SupplierProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> createSupplier({
+  Future<RecordWriteResult> createSupplier({
     required String shopId,
     required String name,
     required String phone,
@@ -37,7 +38,7 @@ class SupplierProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final supplier = await _supplierService.createSupplier(
+    final result = await _supplierService.createSupplier(
       shopId: shopId,
       name: name,
       phone: phone,
@@ -46,13 +47,14 @@ class SupplierProvider extends ChangeNotifier {
       openingBalance: openingBalance,
     );
     _isLoading = false;
-    if (supplier != null) return true;
-    _error = 'Failed to create supplier';
-    notifyListeners();
-    return false;
+    if (!result.success) {
+      _error = 'Failed to create supplier';
+      notifyListeners();
+    }
+    return result;
   }
 
-  Future<bool> updateSupplier({
+  Future<RecordWriteResult> updateSupplier({
     required String shopId,
     required String supplierId,
     required String name,
@@ -62,7 +64,7 @@ class SupplierProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _supplierService.updateSupplier(
+    final result = await _supplierService.updateSupplier(
       shopId: shopId,
       supplierId: supplierId,
       name: name,
@@ -71,23 +73,26 @@ class SupplierProvider extends ChangeNotifier {
       address: address,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to update supplier';
     }
     notifyListeners();
-    return success;
+    return result;
   }
 
-  Future<bool> deleteSupplier(String shopId, String supplierId) async {
+  Future<RecordWriteResult> deleteSupplier(
+    String shopId,
+    String supplierId,
+  ) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _supplierService.deleteSupplier(shopId, supplierId);
+    final result = await _supplierService.deleteSupplier(shopId, supplierId);
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to delete supplier';
     }
     notifyListeners();
-    return success;
+    return result;
   }
 
   void clearError() {

@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import '../models/record_write_result.dart';
 import '../models/supplier_model.dart';
+import '../utils/firestore_write_helper.dart';
 
 class SupplierService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -15,7 +18,7 @@ class SupplierService {
             .toList());
   }
 
-  Future<SupplierModel?> createSupplier({
+  Future<RecordWriteResult> createSupplier({
     required String shopId,
     required String name,
     required String phone,
@@ -42,15 +45,16 @@ class SupplierService {
         createdAt: now,
         updatedAt: now,
       );
-      await docRef.set(supplier.toMap());
-      return supplier;
+      final batch = _firestore.batch();
+      batch.set(docRef, supplier.toMap());
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Create supplier error: $e');
-      return null;
+      debugPrint('Create supplier error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
-  Future<bool> updateSupplier({
+  Future<RecordWriteResult> updateSupplier({
     required String shopId,
     required String supplierId,
     required String name,
@@ -59,37 +63,42 @@ class SupplierService {
     String? address,
   }) async {
     try {
-      await _firestore
+      final supplierRef = _firestore
           .collection('shops')
           .doc(shopId)
           .collection('suppliers')
-          .doc(supplierId)
-          .update({
+          .doc(supplierId);
+      final batch = _firestore.batch();
+      batch.update(supplierRef, {
         'name': name,
         'phone': phone,
         'email': email,
         'address': address,
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Update supplier error: $e');
-      return false;
+      debugPrint('Update supplier error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
-  Future<bool> deleteSupplier(String shopId, String supplierId) async {
+  Future<RecordWriteResult> deleteSupplier(
+    String shopId,
+    String supplierId,
+  ) async {
     try {
-      await _firestore
+      final supplierRef = _firestore
           .collection('shops')
           .doc(shopId)
           .collection('suppliers')
-          .doc(supplierId)
-          .delete();
-      return true;
+          .doc(supplierId);
+      final batch = _firestore.batch();
+      batch.delete(supplierRef);
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Delete supplier error: $e');
-      return false;
+      debugPrint('Delete supplier error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 }
