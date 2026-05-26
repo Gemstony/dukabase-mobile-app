@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/payment_method_service.dart';
 import '../../../core/models/payment_method_model.dart';
 
@@ -27,7 +28,7 @@ class PaymentMethodProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> createPaymentMethod({
+  Future<RecordWriteResult> createPaymentMethod({
     required String shopId,
     required String name,
     required PaymentMethodType type,
@@ -35,32 +36,36 @@ class PaymentMethodProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final method = await _service.createPaymentMethod(
+    final result = await _service.createPaymentMethod(
       shopId: shopId,
       name: name,
       type: type,
       initialBalance: initialBalance,
     );
     _isLoading = false;
-    if (method != null) return true;
-    _error = 'Failed to create payment method';
-    notifyListeners();
-    return false;
+    if (!result.success) {
+      _error = 'Failed to create payment method';
+      notifyListeners();
+    }
+    return result;
   }
 
-  Future<bool> deletePaymentMethod(String shopId, String methodId) async {
+  Future<RecordWriteResult> deletePaymentMethod(
+    String shopId,
+    String methodId,
+  ) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _service.deletePaymentMethod(shopId, methodId);
+    final result = await _service.deletePaymentMethod(shopId, methodId);
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to delete payment method';
       notifyListeners();
     }
-    return success;
+    return result;
   }
 
-  Future<bool> updatePaymentMethod({
+  Future<RecordWriteResult> updatePaymentMethod({
     required String shopId,
     required String methodId,
     required String name,
@@ -68,18 +73,18 @@ class PaymentMethodProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _service.updatePaymentMethod(
+    final result = await _service.updatePaymentMethod(
       shopId: shopId,
       methodId: methodId,
       name: name,
       type: type,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to update payment method';
     }
     notifyListeners();
-    return success;
+    return result;
   }
 
   void clearError() {

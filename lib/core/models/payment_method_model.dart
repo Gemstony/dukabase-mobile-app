@@ -39,6 +39,15 @@ class PaymentMethodModel {
   }
 
   factory PaymentMethodModel.fromMap(String id, Map<String, dynamic> map) {
+    final createdRaw = map['createdAt'];
+    final updatedRaw = map['updatedAt'];
+    final createdAt = createdRaw is Timestamp
+        ? createdRaw.toDate()
+        : DateTime.now();
+    final updatedAt = updatedRaw is Timestamp
+        ? updatedRaw.toDate()
+        : createdAt;
+
     return PaymentMethodModel(
       id: id,
       shopId: map['shopId'] as String,
@@ -47,11 +56,11 @@ class PaymentMethodModel {
         (e) => e.name == map['type'],
         orElse: () => PaymentMethodType.other,
       ),
-      initialBalance: (map['initialBalance'] as num).toDouble(),
-      currentBalance: (map['currentBalance'] as num).toDouble(),
+      initialBalance: ((map['initialBalance'] as num?) ?? 0).toDouble(),
+      currentBalance: ((map['currentBalance'] as num?) ?? 0).toDouble(),
       isActive: map['isActive'] ?? true,
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 }

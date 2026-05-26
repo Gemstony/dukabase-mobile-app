@@ -60,7 +60,7 @@ class SaleService {
           .doc(paymentMethodId);
       batch.update(paymentMethodRef, {
         'currentBalance': FieldValue.increment(paidAmount),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
       // For each item, reduce batch quantity and update product stock

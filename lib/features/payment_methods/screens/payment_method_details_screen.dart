@@ -638,7 +638,7 @@ class _PaymentMethodDetailsScreenState
                               Provider.of<PaymentMethodProvider>(
                                   context,
                                   listen: false);
-                          final success =
+                          final result =
                               await provider.updatePaymentMethod(
                             shopId: widget.shop.id,
                             methodId: _currentMethod.id,
@@ -649,7 +649,7 @@ class _PaymentMethodDetailsScreenState
                           // ignore: use_build_context_synchronously
                           Navigator.pop(context);
 
-                          if (success) {
+                          if (result.success) {
                             setState(() {
                               _currentMethod = PaymentMethodModel(
                                 id: _currentMethod.id,
@@ -665,11 +665,13 @@ class _PaymentMethodDetailsScreenState
                                 updatedAt: DateTime.now(),
                               );
                             });
+                            final message = result.pendingSync
+                                ? 'Update saved offline — will sync when you\'re back online'
+                                : 'Payment method updated successfully';
                             // ignore: use_build_context_synchronously
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      'Payment method updated successfully'),
+                              SnackBar(
+                                  content: Text(message),
                                   backgroundColor: Colors.green),
                             );
                           } else {

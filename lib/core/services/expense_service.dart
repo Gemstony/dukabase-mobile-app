@@ -54,7 +54,7 @@ class ExpenseService {
           .doc(paymentMethodId);
       batch.update(paymentMethodRef, {
         'currentBalance': FieldValue.increment(-amount),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
       return FirestoreWriteHelper.commitBatch(batch);

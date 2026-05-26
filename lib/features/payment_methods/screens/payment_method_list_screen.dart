@@ -59,17 +59,7 @@ class _PaymentMethodListScreenState extends State<PaymentMethodListScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => PaymentMethodDetailsScreen(
-                                  shop: widget.shop,
-                                  method: method,
-                                ),
-                              ),
-                            );
-                          },
+                          onTap: () => _openMethodDetail(method),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -172,14 +162,42 @@ class _PaymentMethodListScreenState extends State<PaymentMethodListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('Add Method'),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddPaymentMethodScreen(shop: widget.shop),
-            ),
-          );
-        },
+        onPressed: _openAddMethod,
+      ),
+    );
+  }
+
+  Future<void> _openMethodDetail(PaymentMethodModel method) async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentMethodDetailsScreen(
+          shop: widget.shop,
+          method: method,
+        ),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  Future<void> _openAddMethod() async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddPaymentMethodScreen(shop: widget.shop),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
       ),
     );
   }
@@ -246,16 +264,18 @@ class _PaymentMethodListScreenState extends State<PaymentMethodListScreen> {
         ],
       ),
     );
-    if (confirm == true) {
+    if (confirm == true && mounted) {
       final provider =
           Provider.of<PaymentMethodProvider>(context, listen: false);
-      final success =
+      final result =
           await provider.deletePaymentMethod(widget.shop.id, method.id);
-      if (success) {
+      if (!mounted) return;
+      if (result.success) {
+        final message = result.pendingSync
+            ? 'Deactivation saved offline — will sync when you\'re back online'
+            : 'Payment method deactivated';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Payment method deactivated'),
-              backgroundColor: Colors.green),
+          SnackBar(content: Text(message), backgroundColor: Colors.green),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -299,15 +319,7 @@ class _PaymentMethodListScreenState extends State<PaymentMethodListScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      AddPaymentMethodScreen(shop: widget.shop),
-                ),
-              );
-            },
+            onPressed: _openAddMethod,
           ),
         ],
       ),

@@ -1,5 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/payment_method_model.dart';
+import '../models/record_write_result.dart';
+import '../utils/firestore_write_helper.dart';
 
 class PaymentMethodService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,13 +16,15 @@ class PaymentMethodService {
         .collection('paymentMethods')
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PaymentMethodModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PaymentMethodModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 
   // Create a new payment method
-  Future<PaymentMethodModel?> createPaymentMethod({
+  Future<RecordWriteResult> createPaymentMethod({
     required String shopId,
     required String name,
     required PaymentMethodType type,
@@ -42,16 +48,18 @@ class PaymentMethodService {
         createdAt: now,
         updatedAt: now,
       );
-      await docRef.set(method.toMap());
-      return method;
+
+      final batch = _firestore.batch();
+      batch.set(docRef, method.toMap());
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Create payment method error: $e');
-      return null;
+      debugPrint('Create payment method error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
   // Update payment method balance (used by sales, purchases, expenses)
-  Future<bool> updateBalance({
+  Future<RecordWriteResult> updateBalance({
     required String shopId,
     required String methodId,
     required double amountChange, // positive = increase, negative = decrease
@@ -62,63 +70,76 @@ class PaymentMethodService {
           .doc(shopId)
           .collection('paymentMethods')
           .doc(methodId);
-      await methodRef.update({
+
+      final batch = _firestore.batch();
+      batch.update(methodRef, {
         'currentBalance': FieldValue.increment(amountChange),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Update balance error: $e');
-      return false;
+      debugPrint('Update balance error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
   // Delete (soft delete by setting isActive = false)
-  Future<bool> deletePaymentMethod(String shopId, String methodId) async {
+  Future<RecordWriteResult> deletePaymentMethod(
+    String shopId,
+    String methodId,
+  ) async {
     try {
       final methodRef = _firestore
           .collection('shops')
           .doc(shopId)
           .collection('paymentMethods')
           .doc(methodId);
-      await methodRef.update({
+
+      final batch = _firestore.batch();
+      batch.update(methodRef, {
         'isActive': false,
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Delete payment method error: $e');
-      return false;
+      debugPrint('Delete payment method error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
   // Update payment method name and type
-  Future<bool> updatePaymentMethod({
+  Future<RecordWriteResult> updatePaymentMethod({
     required String shopId,
     required String methodId,
     required String name,
     required PaymentMethodType type,
   }) async {
     try {
-      await _firestore
+      final methodRef = _firestore
           .collection('shops')
           .doc(shopId)
           .collection('paymentMethods')
-          .doc(methodId)
-          .update({
+          .doc(methodId);
+
+      final batch = _firestore.batch();
+      batch.update(methodRef, {
         'name': name,
         'type': type.name,
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Update payment method error: $e');
-      return false;
+      debugPrint('Update payment method error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
   // Get sales for this payment method (paginated, 20 at a time)
-  Stream<QuerySnapshot> getSalesForMethod(String shopId, String methodId, {int limit = 20}) {
+  Stream<QuerySnapshot> getSalesForMethod(
+    String shopId,
+    String methodId, {
+    int limit = 20,
+  }) {
     return _firestore
         .collection('shops')
         .doc(shopId)
@@ -130,7 +151,11 @@ class PaymentMethodService {
   }
 
   // Get purchases for this payment method (paginated, 20 at a time)
-  Stream<QuerySnapshot> getPurchasesForMethod(String shopId, String methodId, {int limit = 20}) {
+  Stream<QuerySnapshot> getPurchasesForMethod(
+    String shopId,
+    String methodId, {
+    int limit = 20,
+  }) {
     return _firestore
         .collection('shops')
         .doc(shopId)
@@ -142,7 +167,11 @@ class PaymentMethodService {
   }
 
   // Get expenses for this payment method (paginated, 20 at a time)
-  Stream<QuerySnapshot> getExpensesForMethod(String shopId, String methodId, {int limit = 20}) {
+  Stream<QuerySnapshot> getExpensesForMethod(
+    String shopId,
+    String methodId, {
+    int limit = 20,
+  }) {
     return _firestore
         .collection('shops')
         .doc(shopId)

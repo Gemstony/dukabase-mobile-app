@@ -37,18 +37,19 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
     }
     setState(() => _isLoading = true);
     final provider = Provider.of<PaymentMethodProvider>(context, listen: false);
-    final success = await provider.createPaymentMethod(
+    final result = await provider.createPaymentMethod(
       shopId: widget.shop.id,
       name: _nameController.text.trim(),
       type: _selectedType,
       initialBalance: balance,
     );
+    if (!mounted) return;
     setState(() => _isLoading = false);
-    if (success) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payment method added'), backgroundColor: Colors.green),
-      );
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Payment method saved offline — will sync when you\'re back online'
+          : 'Payment method added successfully';
+      Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(provider.error ?? 'Failed'), backgroundColor: Colors.red),

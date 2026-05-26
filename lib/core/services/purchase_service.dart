@@ -59,7 +59,7 @@ class PurchaseService {
             .doc(paymentMethodId);
         batch.update(paymentMethodRef, {
           'currentBalance': FieldValue.increment(-paidAmount),
-          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
       }
 
