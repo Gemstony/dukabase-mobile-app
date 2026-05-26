@@ -66,7 +66,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     setState(() => _isLoading = true);
     final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await expenseProvider.recordExpense(
+    final result = await expenseProvider.recordExpense(
       shopId: widget.shop.id,
       description: _descriptionController.text.trim(),
       amount: amount,
@@ -77,12 +77,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       expenseDate: _expenseDate,
       createdBy: authProvider.currentUser!.id,
     );
+    if (!mounted) return;
     setState(() => _isLoading = false);
-    if (success) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Expense recorded'), backgroundColor: Colors.green),
-      );
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Expense saved offline — will sync when you\'re back online'
+          : 'Expense recorded successfully';
+      Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(expenseProvider.error ?? 'Failed'), backgroundColor: Colors.red),

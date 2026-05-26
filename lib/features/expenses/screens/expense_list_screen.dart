@@ -62,16 +62,27 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddExpenseScreen(shop: widget.shop),
-            ),
-          );
-        },
+        onPressed: () => _openAddExpense(context),
       ),
     );
+  }
+
+  Future<void> _openAddExpense(BuildContext context) async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddExpenseScreen(shop: widget.shop),
+      ),
+    );
+    if (message != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildEmptyState() {
@@ -84,14 +95,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           const Text('No expenses recorded yet'),
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddExpenseScreen(shop: widget.shop),
-                ),
-              );
-            },
+            onPressed: () => _openAddExpense(context),
             child: const Text('Record First Expense'),
           ),
         ],

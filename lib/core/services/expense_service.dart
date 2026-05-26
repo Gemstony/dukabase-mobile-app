@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/expense_model.dart';
+import '../models/record_write_result.dart';
+import '../utils/firestore_write_helper.dart';
 import 'payment_method_service.dart';
 
 class ExpenseService {
@@ -7,7 +10,7 @@ class ExpenseService {
   final PaymentMethodService _paymentMethodService = PaymentMethodService();
 
   /// Record an expense, automatically deduct from payment method balance.
-  Future<bool> recordExpense({
+  Future<RecordWriteResult> recordExpense({
     required String shopId,
     required String description,
     required double amount,
@@ -54,11 +57,10 @@ class ExpenseService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      await batch.commit();
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Record expense error: $e');
-      return false;
+      debugPrint('Record expense error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 

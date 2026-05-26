@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/expense_service.dart';
 import '../../../core/models/expense_model.dart';
 
@@ -27,7 +28,7 @@ class ExpenseProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> recordExpense({
+  Future<RecordWriteResult> recordExpense({
     required String shopId,
     required String description,
     required double amount,
@@ -40,7 +41,7 @@ class ExpenseProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _expenseService.recordExpense(
+    final result = await _expenseService.recordExpense(
       shopId: shopId,
       description: description,
       amount: amount,
@@ -52,11 +53,11 @@ class ExpenseProvider extends ChangeNotifier {
       createdBy: createdBy,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to record expense';
       notifyListeners();
     }
-    return success;
+    return result;
   }
 
   void clearError() {
