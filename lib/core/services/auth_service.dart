@@ -111,6 +111,67 @@ class AuthService {
     }
   }
 
+  /// Verifies the signed-in user's password (Firebase reauthentication).
+  ///
+  /// [email] should be the account email from your user profile when available,
+  /// since [User.email] can be null on some devices even for email/password users.
+  Future<({bool success, String? error})> reauthenticateWithPassword({
+    required String password,
+    String? email,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return (success: false, error: 'You are not signed in');
+    }
+
+    await user.reload();
+    final refreshedUser = _auth.currentUser;
+    if (refreshedUser == null) {
+      return (success: false, error: 'You are not signed in');
+    }
+
+    final resolvedEmail = (email ?? refreshedUser.email)?.trim();
+    if (resolvedEmail == null || resolvedEmail.isEmpty) {
+      return (
+        success: false,
+        error: 'Cannot verify identity: account has no email on file',
+      );
+    }
+
+    try {
+      final credential = EmailAuthProvider.credential(
+        email: resolvedEmail,
+        password: password.trim(),
+      );
+      await refreshedUser.reauthenticateWithCredential(credential);
+      return (success: true, error: null);
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'wrong-password':
+        case 'invalid-credential':
+        case 'invalid-login-credentials':
+          message = 'Incorrect password. Please try again.';
+          break;
+        case 'user-mismatch':
+          message = 'Account mismatch. Sign out and sign in again, then retry.';
+          break;
+        case 'too-many-requests':
+          message = 'Too many attempts. Try again later.';
+          break;
+        case 'network-request-failed':
+          message =
+              'Network error. Connect to the internet to verify your password.';
+          break;
+        default:
+          message = 'Verification failed: ${e.message ?? e.code}';
+      }
+      return (success: false, error: message);
+    } catch (e) {
+      return (success: false, error: 'Verification failed: $e');
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();

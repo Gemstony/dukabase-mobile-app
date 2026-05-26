@@ -36,6 +36,20 @@ class ShopModel {
   }
 
   factory ShopModel.fromMap(String id, Map<String, dynamic> map) {
+    final createdRaw = map['createdAt'];
+    final createdAt = createdRaw is Timestamp
+        ? createdRaw.toDate()
+        : createdRaw is DateTime
+            ? createdRaw
+            : DateTime.now();
+
+    final deletedRaw = map['deletedAt'];
+    final deletedAt = deletedRaw is Timestamp
+        ? deletedRaw.toDate()
+        : deletedRaw is DateTime
+            ? deletedRaw
+            : null;
+
     return ShopModel(
       id: id,
       name: map['name'] as String,
@@ -43,9 +57,9 @@ class ShopModel {
       address: map['address'] as String?,
       phone: map['phone'] as String?,
       currency: map['currency'] as String? ?? 'TZS',
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      createdAt: createdAt,
       isActive: map['isActive'] ?? true,
-      deletedAt: (map['deletedAt'] as Timestamp?)?.toDate(),
+      deletedAt: deletedAt,
     );
   }
 }

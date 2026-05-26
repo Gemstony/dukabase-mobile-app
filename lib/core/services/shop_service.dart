@@ -1,12 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+
+import '../models/record_write_result.dart';
 import '../models/shop_model.dart';
 import '../models/shop_member_model.dart';
 import '../models/user_model.dart';
+import '../utils/connectivity_helper.dart';
+import '../utils/firestore_write_helper.dart';
 
 class ShopService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Create a new shop (owner automatically added as member)
+  /// Create requires network (shop + member documents must reach the server).
   Future<ShopModel?> createShop({
     required String name,
     required String ownerId,
@@ -14,6 +19,10 @@ class ShopService {
     String? phone,
     String? currency,
   }) async {
+    if (!await ConnectivityHelper.isOnline()) {
+      debugPrint('Create shop blocked: device is offline');
+      return null;
+    }
     try {
       final shopRef = _firestore.collection('shops').doc();
       final now = DateTime.now();
@@ -42,8 +51,48 @@ class ShopService {
 
       return shop;
     } catch (e) {
-      print('Create shop error: $e');
+      debugPrint('Create shop error: $e');
       return null;
+    }
+  }
+
+  Future<RecordWriteResult> updateShop({
+    required String shopId,
+    required String name,
+    String? address,
+    String? phone,
+    required String currency,
+  }) async {
+    try {
+      final shopRef = _firestore.collection('shops').doc(shopId);
+      final batch = _firestore.batch();
+      batch.update(shopRef, {
+        'name': name,
+        'address': address,
+        'phone': phone,
+        'currency': currency,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+      return FirestoreWriteHelper.commitBatch(batch);
+    } catch (e) {
+      debugPrint('Update shop error: $e');
+      return const RecordWriteResult(success: false);
+    }
+  }
+
+  /// Soft-deletes a shop (sets inactive + deletedAt).
+  Future<RecordWriteResult> deleteShop(String shopId) async {
+    try {
+      final shopRef = _firestore.collection('shops').doc(shopId);
+      final batch = _firestore.batch();
+      batch.update(shopRef, {
+        'isActive': false,
+        'deletedAt': Timestamp.fromDate(DateTime.now()),
+      });
+      return FirestoreWriteHelper.commitBatch(batch);
+    } catch (e) {
+      debugPrint('Delete shop error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
@@ -69,8 +118,13 @@ class ShopService {
                   .doc(member.shopId)
                   .get();
               if (shopDoc.exists) {
-                shops.add(ShopModel.fromMap(shopDoc.id, shopDoc.data()!));
-                print('✅ Loaded shop: ${shopDoc.data()!['name']}');
+                final shop = ShopModel.fromMap(shopDoc.id, shopDoc.data()!);
+                if (shop.isActive) {
+                  shops.add(shop);
+                  print('✅ Loaded shop: ${shop.name}');
+                } else {
+                  print('⏭️ Skipping inactive shop: ${shop.name}');
+                }
               } else {
                 print(
                   '⚠️ Shop document not found for shopId: ${member.shopId}',

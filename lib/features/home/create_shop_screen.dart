@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/utils/connectivity_helper.dart';
 import '../shops/providers/shop_provider.dart';
 import '../auth/providers/auth_provider.dart';
 
@@ -29,6 +30,21 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
 
   Future<void> _createShop() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!await ConnectivityHelper.isOnline()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'You need an internet connection to create a new shop. '
+            'Connect to the internet and try again.',
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -60,7 +76,13 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shopProvider.error ?? 'Failed to create shop')),
+        SnackBar(
+          content: Text(
+            shopProvider.error ?? 'Failed to create shop',
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       shopProvider.clearError();
     }

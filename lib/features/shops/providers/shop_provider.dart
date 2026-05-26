@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/shop_service.dart';
 import '../../../core/models/shop_model.dart';
+import '../../../core/utils/connectivity_helper.dart';
 
 class ShopProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -31,19 +33,27 @@ class ShopProvider extends ChangeNotifier {
             _shops = shops;
             _isLoading = false;
             _error = null;
-            print('✅ ShopProvider: received ${shops.length} shops');
-            
-            // Try to restore previous current shop
+            print('✅ ShopProvider: received ${shops.length} active shops');
+
             final prefs = await SharedPreferences.getInstance();
+
+            // Clear current shop if it was deactivated or removed
+            if (_currentShop != null &&
+                !shops.any((s) => s.id == _currentShop!.id)) {
+              _currentShop = null;
+              await prefs.remove('currentShopId');
+            }
+
+            // Restore saved shop only if still active
             final savedShopId = prefs.getString('currentShopId');
             if (savedShopId != null && _currentShop == null) {
               try {
                 _currentShop = shops.firstWhere((s) => s.id == savedShopId);
               } catch (_) {
-                // Shop not found in list, maybe it was deleted or permissions changed
+                await prefs.remove('currentShopId');
               }
             }
-            
+
             notifyListeners();
           },
           onError: (error) {
@@ -62,6 +72,12 @@ class ShopProvider extends ChangeNotifier {
     String? phone,
     String? currency,
   }) async {
+    if (!await ConnectivityHelper.isOnline()) {
+      _error = 'You need an internet connection to create a new shop';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -127,7 +143,7 @@ class ShopProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> updateShop({
+  Future<RecordWriteResult> updateShop({
     required String shopId,
     required String name,
     String? address,
@@ -137,50 +153,51 @@ class ShopProvider extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
-    try {
-      final shopRef = _firestore.collection('shops').doc(shopId);
-      await shopRef.update({
-        'name': name,
-        'address': address,
-        'phone': phone,
-        'currency': currency,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      _isLoading = false;
+
+    final result = await _shopService.updateShop(
+      shopId: shopId,
+      name: name,
+      address: address,
+      phone: phone,
+      currency: currency,
+    );
+
+    _isLoading = false;
+    if (!result.success) {
+      _error = 'Failed to update shop';
       notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
     }
+    return result;
   }
 
-  Future<bool> deleteShop(String shopId) async {
+  Future<RecordWriteResult> deleteShop(String shopId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-    try {
-      await _firestore.collection('shops').doc(shopId).update({
-        'isActive': false,
-        'deletedAt': FieldValue.serverTimestamp(),
-      });
-      _isLoading = false;
+
+    final result = await _shopService.deleteShop(shopId);
+
+    _isLoading = false;
+    if (!result.success) {
+      _error = 'Failed to delete shop';
       notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
+    } else {
+      _shops = _shops.where((s) => s.id != shopId).toList();
+      if (_currentShop?.id == shopId) {
+        clearCurrentShop();
+      } else {
+        notifyListeners();
+      }
     }
+    return result;
   }
 
   Future<ShopModel?> getShopById(String shopId) async {
     final doc = await _firestore.collection('shops').doc(shopId).get();
     if (doc.exists) {
-      return ShopModel.fromMap(doc.id, doc.data()!);
+      final shop = ShopModel.fromMap(doc.id, doc.data()!);
+      if (!shop.isActive) return null;
+      return shop;
     }
     return null;
   }

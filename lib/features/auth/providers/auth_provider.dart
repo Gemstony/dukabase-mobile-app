@@ -76,6 +76,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<({bool success, String? error})> verifyPassword(String password) {
+    return _authService.reauthenticateWithPassword(
+      password: password,
+      email: _currentUser?.email,
+    );
+  }
+
   Future<bool> isAdmin() async {
     return await _authService.isCurrentUserAdmin();
   }

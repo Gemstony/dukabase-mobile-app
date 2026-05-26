@@ -42,22 +42,30 @@ class _EditShopScreenState extends State<EditShopScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final success = await shopProvider.updateShop(
+    final result = await shopProvider.updateShop(
       shopId: widget.shop.id,
       name: _nameController.text.trim(),
-      address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-      phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+      address: _addressController.text.trim().isEmpty
+          ? null
+          : _addressController.text.trim(),
+      phone: _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim(),
       currency: _selectedCurrency,
     );
+    if (!mounted) return;
     setState(() => _isLoading = false);
-    if (success) {
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Shop updated'), backgroundColor: Colors.green),
-      );
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Shop saved offline — will sync when you\'re back online'
+          : 'Shop updated successfully';
+      Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(shopProvider.error ?? 'Update failed'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(shopProvider.error ?? 'Update failed'),
+          backgroundColor: Colors.red,
+        ),
       );
       shopProvider.clearError();
     }
@@ -93,13 +101,17 @@ class _EditShopScreenState extends State<EditShopScreen> {
               DropdownButtonFormField<String>(
                 initialValue: _selectedCurrency,
                 decoration: const InputDecoration(labelText: 'Currency'),
-                items: _currencies.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                items: _currencies
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
                 onChanged: (val) => setState(() => _selectedCurrency = val!),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _save,
-                child: _isLoading ? const CircularProgressIndicator() : const Text('Save Changes'),
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Save Changes'),
               ),
             ],
           ),

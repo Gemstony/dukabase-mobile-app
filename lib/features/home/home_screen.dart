@@ -667,14 +667,24 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () {
+              onTap: () async {
                 Provider.of<ShopProvider>(
                   context,
                   listen: false,
                 ).setCurrentShop(shop);
-                Navigator.push(
+                final message = await Navigator.push<String>(
                   context,
-                  MaterialPageRoute(builder: (_) => ShopDetailScreen(shop: shop)),
+                  MaterialPageRoute(
+                    builder: (_) => ShopDetailScreen(shop: shop),
+                  ),
+                );
+                if (!context.mounted || message == null) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 );
               },
               child: Padding(

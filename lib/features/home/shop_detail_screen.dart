@@ -1,3 +1,4 @@
+import 'package:dukabase/core/utils/connectivity_helper.dart';
 import 'package:dukabase/features/auth/providers/auth_provider.dart';
 import 'package:dukabase/features/invitations/screens/owner_invitations_screen.dart';
 import 'package:flutter/material.dart';
@@ -24,69 +25,153 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
   void initState() {
     super.initState();
     _shop = widget.shop;
+    if (!_shop.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _exitIfShopInactive());
+    }
+  }
+
+  void _exitIfShopInactive() {
+    if (!mounted) return;
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('This shop has been deactivated'),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _refresh() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    shopProvider.loadUserShops(
-      shopProvider.shops.isNotEmpty ? shopProvider.shops.first.ownerId : '',
-    );
-    // Alternatively, fetch single shop:
-    final refreshed = await Provider.of<ShopProvider>(
-      context,
-      listen: false,
-    ).getShopById(_shop.id);
-    if (refreshed != null) setState(() => _shop = refreshed);
+    final userId = authProvider.currentUser?.id;
+    if (userId != null) {
+      shopProvider.loadUserShops(userId);
+    }
+    final refreshed = await shopProvider.getShopById(_shop.id);
+    if (!mounted) return;
+    if (refreshed != null) {
+      setState(() => _shop = refreshed);
+    } else {
+      _exitIfShopInactive();
+    }
   }
 
   Future<void> _editShop() async {
-    final updated = await Navigator.push<bool>(
+    final message = await Navigator.push<String>(
       context,
       MaterialPageRoute(builder: (_) => EditShopScreen(shop: _shop)),
     );
-    if (updated == true) await _refresh();
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    await _refresh();
+  }
+
+  Future<String?> _promptDeletePassword() {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _DeleteShopPasswordDialog(shopName: _shop.name),
+    );
+  }
+
+  void _dismissLoadingDialog() {
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
   }
 
   Future<void> _deleteShop() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Shop'),
-        content: const Text(
-          'Are you sure? This will deactivate the shop (data remains but shop will be hidden). This action can be reversed by an admin.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    final provider = Provider.of<ShopProvider>(context, listen: false);
-    final success = await provider.deleteShop(_shop.id);
-    if (success) {
+    if (!_shop.isActive) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Shop deactivated'),
-          backgroundColor: Colors.green,
+          content: Text('This shop is already deactivated'),
+          backgroundColor: Colors.orange,
         ),
       );
-      Navigator.pop(context); // go back to shop list
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.error ?? 'Delete failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      provider.clearError();
+      return;
     }
+
+    if (!await ConnectivityHelper.isOnline()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'An internet connection is required to verify your password '
+            'and delete a shop.',
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final password = await _promptDeletePassword();
+    if (!mounted || password == null || password.isEmpty) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const PopScope(
+        canPop: false,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+
+    String? successMessage;
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final verifyResult = await authProvider.verifyPassword(password);
+
+      if (!mounted) return;
+      if (!verifyResult.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              verifyResult.error ?? 'Password verification failed',
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      final result = await shopProvider.deleteShop(_shop.id);
+
+      if (!mounted) return;
+
+      if (result.success) {
+        successMessage = result.pendingSync
+            ? 'Shop deactivation saved offline — will sync when you\'re back online'
+            : 'Shop deleted successfully';
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(shopProvider.error ?? 'Delete failed'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        shopProvider.clearError();
+      }
+    } finally {
+      _dismissLoadingDialog();
+    }
+
+    if (!mounted || successMessage == null) return;
+    Navigator.pop(context, successMessage);
   }
 
   @override
@@ -237,6 +322,16 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                                 icon: const Icon(Icons.backup),
                                 label: const Text('Backup & Restore'),
                               ),
+                            if (isOwner && _shop.isActive)
+                              OutlinedButton.icon(
+                                onPressed: _deleteShop,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                  side: const BorderSide(color: Colors.red),
+                                ),
+                                icon: const Icon(Icons.delete_outline),
+                                label: const Text('Delete Shop'),
+                              ),
                           ],
                         ),
                       ],
@@ -269,6 +364,96 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
           Expanded(child: Text(value)),
         ],
       ),
+    );
+  }
+}
+
+class _DeleteShopPasswordDialog extends StatefulWidget {
+  final String shopName;
+
+  const _DeleteShopPasswordDialog({required this.shopName});
+
+  @override
+  State<_DeleteShopPasswordDialog> createState() =>
+      _DeleteShopPasswordDialogState();
+}
+
+class _DeleteShopPasswordDialogState extends State<_DeleteShopPasswordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      Navigator.pop(context, _passwordController.text);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete Shop'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'You are about to deactivate "${widget.shopName}". '
+                'Shop data is kept but the shop will be hidden from your list.',
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Enter your account password to confirm you are the owner:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                autofocus: true,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () => setState(
+                      () => _obscurePassword = !_obscurePassword,
+                    ),
+                  ),
+                ),
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Password is required' : null,
+                onFieldSubmitted: (_) => _submit(),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: _submit,
+          child: const Text('Delete Shop'),
+        ),
+      ],
     );
   }
 }
