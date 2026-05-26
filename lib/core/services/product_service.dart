@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/product_model.dart';
 import '../models/batch_model.dart';
+import '../utils/firestore_read_helper.dart';
 
 class ProductService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -148,5 +150,29 @@ class ProductService {
         .map((snapshot) => snapshot.docs
             .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
             .toList());
+  }
+
+  /// Batches with stock available — reads from cache when offline.
+  Future<List<BatchModel>> getActiveBatches(
+    String shopId,
+    String productId,
+  ) async {
+    try {
+      final batchRef = _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('products')
+          .doc(productId)
+          .collection('batches');
+
+      final snapshot = await FirestoreReadHelper.getQuery(batchRef);
+      return snapshot.docs
+          .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
+          .where((batch) => batch.quantity > 0)
+          .toList();
+    } catch (e, st) {
+      debugPrint('getActiveBatches error: $e\n$st');
+      return [];
+    }
   }
 }

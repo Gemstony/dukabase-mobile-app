@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import '../models/record_write_result.dart';
 import '../models/sale_model.dart';
+import '../utils/firestore_write_helper.dart';
 
 class SaleService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<bool> recordSale({
+  Future<RecordWriteResult> recordSale({
     required String shopId,
     required String? customerId,
     required String paymentMethodId,
@@ -111,11 +114,10 @@ class SaleService {
         });
       }
 
-      await batch.commit();
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Record sale error: $e');
-      return false;
+      debugPrint('Record sale error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 

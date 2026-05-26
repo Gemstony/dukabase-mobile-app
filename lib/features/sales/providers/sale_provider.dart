@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/sale_service.dart';
 import '../../../core/models/sale_model.dart';
 
@@ -30,7 +31,7 @@ class SaleProvider extends ChangeNotifier {
     return _saleService.getTodaySales(shopId);
   }
 
-  Future<bool> recordSale({
+  Future<RecordWriteResult> recordSale({
     required String shopId,
     required String? customerId,
     required String paymentMethodId,
@@ -45,7 +46,7 @@ class SaleProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _saleService.recordSale(
+    final result = await _saleService.recordSale(
       shopId: shopId,
       customerId: customerId,
       paymentMethodId: paymentMethodId,
@@ -53,11 +54,11 @@ class SaleProvider extends ChangeNotifier {
       items: items,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to record sale';
       notifyListeners();
     }
-    return success;
+    return result;
   }
 
   void clearError() {

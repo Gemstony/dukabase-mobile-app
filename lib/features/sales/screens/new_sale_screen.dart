@@ -1,9 +1,10 @@
+import 'package:dukabase/core/utils/connectivity_helper.dart';
 import 'package:dukabase/core/utils/currency_formatter.dart';
 import 'package:dukabase/core/widgets/transaction_form_ui.dart';
 import 'package:dukabase/features/payment_methods/providers/payment_method_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/services/product_service.dart';
 import '../providers/sale_provider.dart';
 import '../../customers/providers/customer_provider.dart';
 import '../../products/providers/product_provider.dart';
@@ -22,6 +23,7 @@ class NewSaleScreen extends StatefulWidget {
 
 class _NewSaleScreenState extends State<NewSaleScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _productService = ProductService();
   String? _selectedPaymentMethodId;
   final List<CartItem> _cart = [];
   String? _selectedCustomerId;
@@ -68,8 +70,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     // Step 2: get available batches for this product
     final batches = await _getBatchesForProduct(product.id);
     if (batches.isEmpty) {
+      final offline = !await ConnectivityHelper.isOnline();
       _showSnackBar(
-        'No batches available for ${product.name}. Purchase stock first.',
+        offline
+            ? 'No batch data for ${product.name} on this device. '
+                  'Open the shop while online once, or add stock while connected.'
+            : 'No batches available for ${product.name}. Purchase stock first.',
       );
       return;
     }
@@ -142,36 +148,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
-  Future<List<BatchModel>> _getBatchesForProduct(String productId) async {
-    try {
-      print('🔍 Fetching batches for productId: $productId');
-      final batchRef = FirebaseFirestore.instance
-          .collection('shops')
-          .doc(widget.shop.id)
-          .collection('products')
-          .doc(productId)
-          .collection('batches');
-
-      print('📁 Batch reference path: ${batchRef.path}');
-
-      final snapshot = await batchRef.get();
-      print('📦 Total batches found (no filter): ${snapshot.docs.length}');
-
-      for (var doc in snapshot.docs) {
-        print('Batch doc: ${doc.id} -> data: ${doc.data()}');
-      }
-
-      // Now filter with quantity > 0 manually (to avoid Firestore type issues)
-      final batches = snapshot.docs
-          .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
-          .where((batch) => batch.quantity > 0)
-          .toList();
-      print('✅ Batches with quantity > 0: ${batches.length}');
-      return batches;
-    } catch (e) {
-      print('❌ Error fetching batches: $e');
-      return [];
-    }
+  Future<List<BatchModel>> _getBatchesForProduct(String productId) {
+    return _productService.getActiveBatches(widget.shop.id, productId);
   }
 
   Future<BatchModel?> _showBatchPicker(List<BatchModel> batches) async {
@@ -278,7 +256,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }
 
     final saleProvider = Provider.of<SaleProvider>(context, listen: false);
-    final success = await saleProvider.recordSale(
+    final result = await saleProvider.recordSale(
       shopId: widget.shop.id,
       customerId: _selectedCustomerId,
       paymentMethodId: _selectedPaymentMethodId!,
@@ -296,11 +274,20 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           .toList(),
     );
 
-    if (success) {
-      _showSnackBar('Sale recorded successfully', isError: false);
+    if (!mounted) return;
+
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Sale saved offline — will sync when you\'re back online'
+          : 'Sale recorded successfully';
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => SalesListScreen(shop: widget.shop)),
+        MaterialPageRoute(
+          builder: (_) => SalesListScreen(
+            shop: widget.shop,
+            successMessage: message,
+          ),
+        ),
       );
     } else {
       _showSnackBar(saleProvider.error ?? 'Failed to record sale');
