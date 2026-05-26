@@ -540,18 +540,23 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
         return;
       }
       final paymentProvider = Provider.of<PaymentProvider>(context, listen: false);
-      final success = await paymentProvider.recordPayment(
+      final result = await paymentProvider.recordPayment(
         shopId: widget.shop.id,
         customerId: widget.customerId,
         amount: amount,
         paymentMethodId: 'cash',
         note: noteController.text,
       );
-      if (success) {
+      if (!mounted) return;
+      if (result.success) {
+        final message = result.pendingSync
+            ? 'Payment saved offline — will sync when you\'re back online'
+            : 'Payment recorded successfully';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment recorded'), backgroundColor: Colors.green),
+          SnackBar(content: Text(message), backgroundColor: Colors.green),
         );
         final updated = await _customerService.getCustomer(widget.shop.id, widget.customerId);
+        if (!mounted) return;
         setState(() => _customer = updated);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -625,7 +630,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
 
                         // ignore: use_build_context_synchronously
                         final provider = Provider.of<CustomerProvider>(context, listen: false);
-                        final success = await provider.updateCustomer(
+                        final result = await provider.updateCustomer(
                           shopId: widget.shop.id,
                           customerId: _customer!.id,
                           name: nameController.text.trim(),
@@ -636,7 +641,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         // ignore: use_build_context_synchronously
                         Navigator.pop(context);
 
-                        if (success) {
+                        if (result.success) {
                           setState(() {
                             _customer = CustomerModel(
                               id: _customer!.id,
@@ -650,9 +655,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                               updatedAt: DateTime.now(),
                             );
                           });
+                          final message = result.pendingSync
+                              ? 'Customer update saved offline — will sync when you\'re back online'
+                              : 'Customer updated successfully';
                           // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Customer updated successfully'), backgroundColor: Colors.green),
+                            SnackBar(content: Text(message), backgroundColor: Colors.green),
                           );
                         } else {
                           // ignore: use_build_context_synchronously
@@ -699,18 +707,20 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
               );
 
               final provider = Provider.of<CustomerProvider>(context, listen: false);
-              final success = await provider.deleteCustomer(widget.shop.id, _customer!.id);
+              final result = await provider.deleteCustomer(
+                widget.shop.id,
+                _customer!.id,
+              );
 
               // ignore: use_build_context_synchronously
               Navigator.pop(context);
 
-              if (success) {
+              if (result.success) {
+                final message = result.pendingSync
+                    ? 'Customer deletion saved offline — will sync when you\'re back online'
+                    : 'Customer deleted successfully';
                 // ignore: use_build_context_synchronously
-                Navigator.pop(context);
-                // ignore: use_build_context_synchronously
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Customer deleted successfully'), backgroundColor: Colors.green),
-                );
+                Navigator.pop(context, message);
               } else {
                 // ignore: use_build_context_synchronously
                 ScaffoldMessenger.of(context).showSnackBar(

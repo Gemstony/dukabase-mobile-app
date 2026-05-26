@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/customer_service.dart';
 import '../../../core/models/customer_model.dart';
 
@@ -27,7 +28,7 @@ class CustomerProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> createCustomer({
+  Future<RecordWriteResult> createCustomer({
     required String shopId,
     required String name,
     required String phone,
@@ -36,7 +37,7 @@ class CustomerProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final customer = await _customerService.createCustomer(
+    final result = await _customerService.createCustomer(
       shopId: shopId,
       name: name,
       phone: phone,
@@ -44,13 +45,14 @@ class CustomerProvider extends ChangeNotifier {
       openingBalance: openingBalance,
     );
     _isLoading = false;
-    if (customer != null) return true;
-    _error = 'Failed to create customer';
-    notifyListeners();
-    return false;
+    if (!result.success) {
+      _error = 'Failed to create customer';
+      notifyListeners();
+    }
+    return result;
   }
 
-  Future<bool> updateCustomer({
+  Future<RecordWriteResult> updateCustomer({
     required String shopId,
     required String customerId,
     required String name,
@@ -59,7 +61,7 @@ class CustomerProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _customerService.updateCustomer(
+    final result = await _customerService.updateCustomer(
       shopId: shopId,
       customerId: customerId,
       name: name,
@@ -67,23 +69,26 @@ class CustomerProvider extends ChangeNotifier {
       email: email,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to update customer';
     }
     notifyListeners();
-    return success;
+    return result;
   }
 
-  Future<bool> deleteCustomer(String shopId, String customerId) async {
+  Future<RecordWriteResult> deleteCustomer(
+    String shopId,
+    String customerId,
+  ) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _customerService.deleteCustomer(shopId, customerId);
+    final result = await _customerService.deleteCustomer(shopId, customerId);
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to delete customer';
     }
     notifyListeners();
-    return success;
+    return result;
   }
 
   void clearError() {

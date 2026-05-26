@@ -1,5 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/customer_model.dart';
+import '../models/record_write_result.dart';
+import '../utils/firestore_read_helper.dart';
+import '../utils/firestore_write_helper.dart';
 
 class CustomerService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -17,7 +22,25 @@ class CustomerService {
         );
   }
 
-  Future<CustomerModel?> createCustomer({
+  Future<CustomerModel?> getCustomer(String shopId, String customerId) async {
+    try {
+      final customerRef = _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('customers')
+          .doc(customerId);
+      final doc = await FirestoreReadHelper.getDocument(customerRef);
+      if (doc.exists) {
+        return CustomerModel.fromMap(doc.id, doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Get customer error: $e');
+      return null;
+    }
+  }
+
+  Future<RecordWriteResult> createCustomer({
     required String shopId,
     required String name,
     required String phone,
@@ -42,33 +65,17 @@ class CustomerService {
         createdAt: now,
         updatedAt: now,
       );
-      await docRef.set(customer.toMap());
-      return customer;
+
+      final batch = _firestore.batch();
+      batch.set(docRef, customer.toMap());
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Create customer error: $e');
-      return null;
+      debugPrint('Create customer error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
-  Future<CustomerModel?> getCustomer(String shopId, String customerId) async {
-    try {
-      final doc = await _firestore
-          .collection('shops')
-          .doc(shopId)
-          .collection('customers')
-          .doc(customerId)
-          .get();
-      if (doc.exists) {
-        return CustomerModel.fromMap(doc.id, doc.data()!);
-      }
-      return null;
-    } catch (e) {
-      print('Get customer error: $e');
-      return null;
-    }
-  }
-
-  Future<bool> updateCustomer({
+  Future<RecordWriteResult> updateCustomer({
     required String shopId,
     required String customerId,
     required String name,
@@ -76,36 +83,44 @@ class CustomerService {
     String? email,
   }) async {
     try {
-      await _firestore
+      final customerRef = _firestore
           .collection('shops')
           .doc(shopId)
           .collection('customers')
-          .doc(customerId)
-          .update({
+          .doc(customerId);
+
+      final batch = _firestore.batch();
+      batch.update(customerRef, {
         'name': name,
         'phone': phone,
         'email': email,
-        'updatedAt': FieldValue.serverTimestamp(),
+        // Use client time so reads work instantly offline.
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Update customer error: $e');
-      return false;
+      debugPrint('Update customer error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
-  Future<bool> deleteCustomer(String shopId, String customerId) async {
+  Future<RecordWriteResult> deleteCustomer(
+    String shopId,
+    String customerId,
+  ) async {
     try {
-      await _firestore
+      final customerRef = _firestore
           .collection('shops')
           .doc(shopId)
           .collection('customers')
-          .doc(customerId)
-          .delete();
-      return true;
+          .doc(customerId);
+
+      final batch = _firestore.batch();
+      batch.delete(customerRef);
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Delete customer error: $e');
-      return false;
+      debugPrint('Delete customer error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 }

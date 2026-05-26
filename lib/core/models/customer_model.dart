@@ -37,16 +37,25 @@ class CustomerModel {
   }
 
   factory CustomerModel.fromMap(String id, Map<String, dynamic> map) {
+    final createdRaw = map['createdAt'];
+    final updatedRaw = map['updatedAt'];
+    final createdAt = createdRaw is Timestamp
+        ? createdRaw.toDate()
+        : DateTime.now();
+    final updatedAt = updatedRaw is Timestamp
+        ? updatedRaw.toDate()
+        : createdAt;
+
     return CustomerModel(
       id: id,
       shopId: map['shopId'] as String,
       name: map['name'] as String,
       phone: map['phone'] as String,
       email: map['email'] as String?,
-      openingBalance: (map['openingBalance'] as num).toDouble(),
-      currentBalance: (map['currentBalance'] as num).toDouble(),
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      openingBalance: ((map['openingBalance'] as num?) ?? 0).toDouble(),
+      currentBalance: ((map['currentBalance'] as num?) ?? 0).toDouble(),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 }

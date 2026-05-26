@@ -23,19 +23,20 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     final provider = Provider.of<CustomerProvider>(context, listen: false);
-    final success = await provider.createCustomer(
+    final result = await provider.createCustomer(
       shopId: widget.shop.id,
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
       email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
       openingBalance: double.tryParse(_balanceController.text) ?? 0,
     );
+    if (!mounted) return;
     setState(() => _isLoading = false);
-    if (success) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Customer added'), backgroundColor: Colors.green),
-      );
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Customer saved offline — will sync when you\'re back online'
+          : 'Customer added successfully';
+      Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(provider.error ?? 'Failed'), backgroundColor: Colors.red),

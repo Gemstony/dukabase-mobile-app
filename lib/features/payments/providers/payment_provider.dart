@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/payment_service.dart';
 
 class PaymentProvider extends ChangeNotifier {
@@ -9,7 +10,7 @@ class PaymentProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<bool> recordPayment({
+  Future<RecordWriteResult> recordPayment({
     required String shopId,
     required String customerId,
     required double amount,
@@ -19,7 +20,7 @@ class PaymentProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _paymentService.recordPayment(
+    final result = await _paymentService.recordPayment(
       shopId: shopId,
       customerId: customerId,
       amount: amount,
@@ -28,13 +29,13 @@ class PaymentProvider extends ChangeNotifier {
       note: note,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to record payment';
       notifyListeners();
     } else {
       _error = null;
     }
-    return success;
+    return result;
   }
 
   void clearError() {

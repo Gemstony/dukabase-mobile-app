@@ -20,4 +20,18 @@ class FirestoreReadHelper {
     }
     return query.get(const GetOptions(source: Source.cache));
   }
+
+  /// Fetches a document, preferring server when online and cache when offline.
+  static Future<DocumentSnapshot<Map<String, dynamic>>> getDocument(
+    DocumentReference<Map<String, dynamic>> reference,
+  ) async {
+    if (await ConnectivityHelper.isOnline()) {
+      try {
+        return await reference.get();
+      } catch (e) {
+        debugPrint('Firestore document fetch failed, using cache: $e');
+      }
+    }
+    return reference.get(const GetOptions(source: Source.cache));
+  }
 }

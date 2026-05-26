@@ -56,17 +56,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CustomerDetailScreen(
-                                  shop: widget.shop,
-                                  customerId: customer.id,
-                                ),
-                              ),
-                            );
-                          },
+                          onTap: () => _openCustomerDetail(customer.id),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -129,14 +119,42 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('New Customer'),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddCustomerScreen(shop: widget.shop),
-            ),
-          );
-        },
+        onPressed: _openAddCustomer,
+      ),
+    );
+  }
+
+  Future<void> _openCustomerDetail(String customerId) async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CustomerDetailScreen(
+          shop: widget.shop,
+          customerId: customerId,
+        ),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  Future<void> _openAddCustomer() async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddCustomerScreen(shop: widget.shop),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
       ),
     );
   }
@@ -151,14 +169,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           const Text('No customers yet'),
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddCustomerScreen(shop: widget.shop),
-                ),
-              );
-            },
+            onPressed: _openAddCustomer,
             child: const Text('Add Customer'),
           ),
         ],
