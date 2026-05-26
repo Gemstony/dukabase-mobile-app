@@ -94,7 +94,7 @@ class PurchaseService {
             .doc(item.productId);
         batch.update(productRef, {
           'currentStock': FieldValue.increment(item.quantity),
-          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
 
         // Add purchase item document with productName

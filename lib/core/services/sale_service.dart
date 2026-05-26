@@ -85,7 +85,7 @@ class SaleService {
             .doc(item.productId);
         batch.update(productRef, {
           'currentStock': FieldValue.increment(-item.quantity),
-          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
 
         // Add sale item document with productName

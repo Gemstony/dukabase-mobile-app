@@ -34,7 +34,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     final provider = Provider.of<ProductProvider>(context, listen: false);
-    final success = await provider.createProduct(
+    final result = await provider.createProduct(
       shopId: widget.shop.id,
       name: _nameController.text.trim(),
       sku: _skuController.text.trim(),
@@ -42,12 +42,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
       defaultSellingPrice: double.parse(_priceController.text),
       lowStockAlert: double.parse(_alertController.text),
     );
+    if (!mounted) return;
     setState(() => _isLoading = false);
-    if (success) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product added'), backgroundColor: Colors.green),
-      );
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Product saved offline — will sync when you\'re back online'
+          : 'Product added successfully';
+      Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(provider.error ?? 'Failed'), backgroundColor: Colors.red),

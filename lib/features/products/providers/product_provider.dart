@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/models/product_model.dart';
 
@@ -27,7 +28,7 @@ class ProductProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> createProduct({
+  Future<RecordWriteResult> createProduct({
     required String shopId,
     required String name,
     required String sku,
@@ -37,7 +38,7 @@ class ProductProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final product = await _productService.createProduct(
+    final result = await _productService.createProduct(
       shopId: shopId,
       name: name,
       sku: sku,
@@ -46,17 +47,14 @@ class ProductProvider extends ChangeNotifier {
       lowStockAlert: lowStockAlert,
     );
     _isLoading = false;
-    if (product != null) {
-      // The stream will add it automatically
-      return true;
-    } else {
+    if (!result.success) {
       _error = 'Failed to create product';
       notifyListeners();
-      return false;
     }
+    return result;
   }
 
-  Future<bool> updateProduct({
+  Future<RecordWriteResult> updateProduct({
     required String shopId,
     required String productId,
     required String name,
@@ -66,7 +64,7 @@ class ProductProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _productService.updateProduct(
+    final result = await _productService.updateProduct(
       shopId: shopId,
       productId: productId,
       name: name,
@@ -75,11 +73,26 @@ class ProductProvider extends ChangeNotifier {
       lowStockAlert: lowStockAlert,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to update product';
     }
     notifyListeners();
-    return success;
+    return result;
+  }
+
+  Future<RecordWriteResult> deleteProduct(
+    String shopId,
+    String productId,
+  ) async {
+    _isLoading = true;
+    notifyListeners();
+    final result = await _productService.deleteProduct(shopId, productId);
+    _isLoading = false;
+    if (!result.success) {
+      _error = 'Failed to delete product';
+      notifyListeners();
+    }
+    return result;
   }
 
   void clearError() {

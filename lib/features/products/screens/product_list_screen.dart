@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../../../core/models/shop_model.dart';
+import '../../../core/models/product_model.dart';
 import 'add_product_screen.dart';
 import 'product_details_screen.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -58,14 +59,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ProductDetailsScreen(shop: widget.shop, product: product),
-                              ),
-                            );
-                          },
+                          onTap: () => _openProductDetail(product),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -141,14 +135,39 @@ class _ProductListScreenState extends State<ProductListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('New Product'),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddProductScreen(shop: widget.shop),
-            ),
-          );
-        },
+        onPressed: _openAddProduct,
+      ),
+    );
+  }
+
+  Future<void> _openProductDetail(ProductModel product) async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductDetailsScreen(shop: widget.shop, product: product),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  Future<void> _openAddProduct() async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddProductScreen(shop: widget.shop),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
       ),
     );
   }
@@ -163,14 +182,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           const Text('No products yet'),
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddProductScreen(shop: widget.shop),
-                ),
-              );
-            },
+            onPressed: _openAddProduct,
             child: const Text('Add Product'),
           ),
         ],

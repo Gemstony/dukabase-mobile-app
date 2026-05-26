@@ -56,6 +56,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
             tooltip: 'Edit Product',
             onPressed: () => _showEditProductModal(context),
           ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            tooltip: 'Delete Product',
+            onPressed: () => _confirmDelete(context),
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -463,7 +468,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                         final price = double.parse(priceController.text);
                         final alert = double.parse(alertController.text);
                         
-                        final success = await productProvider.updateProduct(
+                        final result = await productProvider.updateProduct(
                           shopId: widget.shop.id,
                           productId: _currentProduct.id,
                           name: nameController.text.trim(),
@@ -475,7 +480,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                         // ignore: use_build_context_synchronously
                         Navigator.pop(context); // close loading
                         
-                        if (success) {
+                        if (result.success) {
                           setState(() {
                             // Rebuild UI with local modifications
                             _currentProduct = ProductModel(
@@ -491,9 +496,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                               updatedAt: DateTime.now(),
                             );
                           });
+                          final message = result.pendingSync
+                              ? 'Product update saved offline — will sync when you\'re back online'
+                              : 'Product updated successfully';
                           // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Product updated successfully'), backgroundColor: Colors.green),
+                            SnackBar(content: Text(message), backgroundColor: Colors.green),
                           );
                         } else {
                           // ignore: use_build_context_synchronously
@@ -512,6 +520,65 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
           ),
         );
       },
+    );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Product'),
+        content: Text(
+          'Are you sure you want to delete "${_currentProduct.name}"? '
+          'This will remove the product and all its batches. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(ctx);
+
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (c) => const Center(child: CircularProgressIndicator()),
+              );
+
+              final productProvider =
+                  Provider.of<ProductProvider>(context, listen: false);
+              final result = await productProvider.deleteProduct(
+                widget.shop.id,
+                _currentProduct.id,
+              );
+
+              // ignore: use_build_context_synchronously
+              Navigator.pop(context);
+
+              if (result.success) {
+                final message = result.pendingSync
+                    ? 'Product deletion saved offline — will sync when you\'re back online'
+                    : 'Product deleted successfully';
+                // ignore: use_build_context_synchronously
+                Navigator.pop(context, message);
+              } else {
+                // ignore: use_build_context_synchronously
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(productProvider.error ?? 'Delete failed'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                productProvider.clearError();
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }

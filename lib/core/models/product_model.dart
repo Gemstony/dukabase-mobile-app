@@ -40,17 +40,26 @@ class ProductModel {
   }
 
   factory ProductModel.fromMap(String id, Map<String, dynamic> map) {
+    final createdRaw = map['createdAt'];
+    final updatedRaw = map['updatedAt'];
+    final createdAt = createdRaw is Timestamp
+        ? createdRaw.toDate()
+        : DateTime.now();
+    final updatedAt = updatedRaw is Timestamp
+        ? updatedRaw.toDate()
+        : createdAt;
+
     return ProductModel(
       id: id,
       shopId: map['shopId'] as String,
       name: map['name'] as String,
       sku: map['sku'] as String,
       unit: map['unit'] as String,
-      defaultSellingPrice: (map['defaultSellingPrice'] as num).toDouble(),
-      currentStock: (map['currentStock'] as num).toDouble(),
-      lowStockAlert: (map['lowStockAlert'] as num).toDouble(),
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      defaultSellingPrice: ((map['defaultSellingPrice'] as num?) ?? 0).toDouble(),
+      currentStock: ((map['currentStock'] as num?) ?? 0).toDouble(),
+      lowStockAlert: ((map['lowStockAlert'] as num?) ?? 0).toDouble(),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 }

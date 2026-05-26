@@ -56,7 +56,7 @@ class StockAdjustmentService {
           .doc(productId);
       batch.update(productRef, {
         'currentStock': FieldValue.increment(quantityChange),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
       await batch.commit();

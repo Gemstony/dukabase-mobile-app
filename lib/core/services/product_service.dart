@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+
 import '../models/product_model.dart';
 import '../models/batch_model.dart';
+import '../models/record_write_result.dart';
 import '../utils/firestore_read_helper.dart';
+import '../utils/firestore_write_helper.dart';
 
 class ProductService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -14,13 +17,15 @@ class ProductService {
         .doc(shopId)
         .collection('products')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ProductModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ProductModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 
   // Create a new product
-  Future<ProductModel?> createProduct({
+  Future<RecordWriteResult> createProduct({
     required String shopId,
     required String name,
     required String sku,
@@ -47,16 +52,18 @@ class ProductService {
         createdAt: now,
         updatedAt: now,
       );
-      await docRef.set(product.toMap());
-      return product;
+
+      final batch = _firestore.batch();
+      batch.set(docRef, product.toMap());
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Create product error: $e');
-      return null;
+      debugPrint('Create product error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
   // Add a batch to a product (used when purchasing)
-  Future<BatchModel?> addBatch({
+  Future<RecordWriteResult> addBatch({
     required String shopId,
     required String productId,
     required String batchCode,
@@ -68,14 +75,14 @@ class ProductService {
     required String purchaseId,
   }) async {
     try {
-      final batchesRef = _firestore
+      final batchRef = _firestore
           .collection('shops')
           .doc(shopId)
           .collection('products')
           .doc(productId)
-          .collection('batches');
-      final batchRef = batchesRef.doc();
-      final batch = BatchModel(
+          .collection('batches')
+          .doc();
+      final batchModel = BatchModel(
         id: batchRef.id,
         productId: productId,
         batchCode: batchCode,
@@ -87,28 +94,28 @@ class ProductService {
         purchaseId: purchaseId,
         createdAt: DateTime.now(),
       );
-      await batchRef.set(batch.toMap());
 
-      // Update product current stock
       final productRef = _firestore
           .collection('shops')
           .doc(shopId)
           .collection('products')
           .doc(productId);
-      await productRef.update({
-        'currentStock': FieldValue.increment(quantity),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
 
-      return batch;
+      final batch = _firestore.batch();
+      batch.set(batchRef, batchModel.toMap());
+      batch.update(productRef, {
+        'currentStock': FieldValue.increment(quantity),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Add batch error: $e');
-      return null;
+      debugPrint('Add batch error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
   // Update product details
-  Future<bool> updateProduct({
+  Future<RecordWriteResult> updateProduct({
     required String shopId,
     required String productId,
     required String name,
@@ -122,18 +129,46 @@ class ProductService {
           .doc(shopId)
           .collection('products')
           .doc(productId);
-          
-      await productRef.update({
+
+      final batch = _firestore.batch();
+      batch.update(productRef, {
         'name': name,
         'unit': unit,
         'defaultSellingPrice': defaultSellingPrice,
         'lowStockAlert': lowStockAlert,
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Update product error: $e');
-      return false;
+      debugPrint('Update product error: $e');
+      return const RecordWriteResult(success: false);
+    }
+  }
+
+  /// Deletes a product and its batch subcollection.
+  Future<RecordWriteResult> deleteProduct(
+    String shopId,
+    String productId,
+  ) async {
+    try {
+      final productRef = _firestore
+          .collection('shops')
+          .doc(shopId)
+          .collection('products')
+          .doc(productId);
+
+      final batchesSnapshot =
+          await FirestoreReadHelper.getQuery(productRef.collection('batches'));
+
+      final batch = _firestore.batch();
+      for (final doc in batchesSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      batch.delete(productRef);
+      return FirestoreWriteHelper.commitBatch(batch);
+    } catch (e) {
+      debugPrint('Delete product error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
@@ -147,9 +182,11 @@ class ProductService {
         .collection('batches')
         .orderBy('createdAt', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 
   /// Batches with stock available — reads from cache when offline.

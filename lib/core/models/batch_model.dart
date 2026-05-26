@@ -40,17 +40,22 @@ class BatchModel {
   }
 
   factory BatchModel.fromMap(String id, Map<String, dynamic> map) {
+    final createdRaw = map['createdAt'];
+    final createdAt = createdRaw is Timestamp
+        ? createdRaw.toDate()
+        : DateTime.now();
+
     return BatchModel(
       id: id,
       productId: map['productId'] as String,
       batchCode: map['batchCode'] as String,
-      costPrice: (map['costPrice'] as num).toDouble(),
-      sellingPrice: (map['sellingPrice'] as num).toDouble(),
-      quantity: (map['quantity'] as num).toDouble(),
+      costPrice: ((map['costPrice'] as num?) ?? 0).toDouble(),
+      sellingPrice: ((map['sellingPrice'] as num?) ?? 0).toDouble(),
+      quantity: ((map['quantity'] as num?) ?? 0).toDouble(),
       expiryDate: (map['expiryDate'] as Timestamp?)?.toDate(),
       supplierId: map['supplierId'] as String,
       purchaseId: map['purchaseId'] as String,
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      createdAt: createdAt,
     );
   }
 }
