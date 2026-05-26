@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/purchase_service.dart';
 import '../../../core/models/purchase_model.dart';
 
@@ -27,7 +28,7 @@ class PurchaseProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> recordPurchase({
+  Future<RecordWriteResult> recordPurchase({
     required String shopId,
     required String supplierId,
     required String supplierName,
@@ -46,7 +47,7 @@ class PurchaseProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _purchaseService.recordPurchase(
+    final result = await _purchaseService.recordPurchase(
       shopId: shopId,
       supplierId: supplierId,
       supplierName: supplierName,
@@ -56,11 +57,11 @@ class PurchaseProvider extends ChangeNotifier {
       items: items,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to record purchase';
       notifyListeners();
     }
-    return success;
+    return result;
   }
 
   void clearError() {

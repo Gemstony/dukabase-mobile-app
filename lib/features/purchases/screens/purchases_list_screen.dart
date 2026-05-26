@@ -6,8 +6,13 @@ import 'package:intl/intl.dart';
 
 class PurchasesListScreen extends StatefulWidget {
   final ShopModel shop;
-  
-  const PurchasesListScreen({super.key, required this.shop});
+  final String? successMessage;
+
+  const PurchasesListScreen({
+    super.key,
+    required this.shop,
+    this.successMessage,
+  });
 
   @override
   State<PurchasesListScreen> createState() => _PurchasesListScreenState();
@@ -24,6 +29,19 @@ class _PurchasesListScreenState extends State<PurchasesListScreen> {
   @override
   void initState() {
     super.initState();
+    final message = widget.successMessage;
+    if (message != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      });
+    }
     _fetchPurchases();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {

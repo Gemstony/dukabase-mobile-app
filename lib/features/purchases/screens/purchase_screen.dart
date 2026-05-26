@@ -102,7 +102,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       context,
       listen: false,
     );
-    final success = await purchaseProvider.recordPurchase(
+    final result = await purchaseProvider.recordPurchase(
       shopId: widget.shop.id,
       supplierId: _selectedSupplier!.id,
       supplierName: _selectedSupplier!.name,
@@ -124,17 +124,19 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           .toList(),
     );
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Purchase recorded'),
-          backgroundColor: Colors.green,
-        ),
-      );
+    if (!mounted) return;
+
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Purchase saved offline — will sync when you\'re back online'
+          : 'Purchase recorded successfully';
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => PurchasesListScreen(shop: widget.shop),
+          builder: (_) => PurchasesListScreen(
+            shop: widget.shop,
+            successMessage: message,
+          ),
         ),
       );
     } else {

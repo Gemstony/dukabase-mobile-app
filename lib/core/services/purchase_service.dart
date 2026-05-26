@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/purchase_model.dart';
 import '../models/batch_model.dart';
+import '../models/record_write_result.dart';
+import '../utils/firestore_write_helper.dart';
 
 class PurchaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<bool> recordPurchase({
+  Future<RecordWriteResult> recordPurchase({
     required String shopId,
     required String supplierId,
     required String supplierName, // ✅ new field
@@ -131,11 +133,10 @@ class PurchaseService {
         });
       }
 
-      await batch.commit();
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
       debugPrint('Record purchase error: $e');
-      return false;
+      return const RecordWriteResult(success: false);
     }
   }
 
