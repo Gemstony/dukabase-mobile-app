@@ -1,3 +1,5 @@
+import 'package:dukabase/core/utils/currency_formatter.dart';
+import 'package:dukabase/core/widgets/transaction_form_ui.dart';
 import 'package:dukabase/features/payment_methods/providers/payment_method_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -111,23 +113,29 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     _showSnackBar('${product.name} added to cart', isError: false);
   }
 
+  String _formatAmount(double amount) =>
+      CurrencyFormatter.format(amount, widget.shop.currency);
+
   Future<ProductModel?> _showProductPicker(List<ProductModel> products) async {
     return showDialog<ProductModel>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Select Product'),
+      builder: (ctx) => TransactionFormUi.styledDialog(
+        title: 'Select Product',
+        icon: Icons.inventory_2_outlined,
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
             shrinkWrap: true,
             itemCount: products.length,
-            itemBuilder: (_, i) => ListTile(
-              title: Text(products[i].name),
-              subtitle: Text(
-                'Stock: ${products[i].currentStock} ${products[i].unit}',
-              ),
-              onTap: () => Navigator.pop(ctx, products[i]),
-            ),
+            itemBuilder: (_, i) {
+              final p = products[i];
+              return TransactionFormUi.dialogListTile(
+                title: p.name,
+                subtitle: 'Stock: ${p.currentStock} ${p.unit}',
+                icon: Icons.shopping_bag_outlined,
+                onTap: () => Navigator.pop(ctx, p),
+              );
+            },
           ),
         ),
       ),
@@ -169,8 +177,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   Future<BatchModel?> _showBatchPicker(List<BatchModel> batches) async {
     return showDialog<BatchModel>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Select Batch'),
+      builder: (ctx) => TransactionFormUi.styledDialog(
+        title: 'Select Batch',
+        icon: Icons.layers_outlined,
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -178,11 +187,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             itemCount: batches.length,
             itemBuilder: (_, i) {
               final b = batches[i];
-              return ListTile(
-                title: Text('Batch: ${b.batchCode}'),
-                subtitle: Text(
-                  'Qty: ${b.quantity} | Sell: ${b.sellingPrice}${b.expiryDate != null ? ' | Expiry: ${b.expiryDate!.toLocal().toString().split(' ')[0]}' : ''}',
-                ),
+              final expiry = b.expiryDate != null
+                  ? ' · Exp ${b.expiryDate!.toLocal().toString().split(' ')[0]}'
+                  : '';
+              return TransactionFormUi.dialogListTile(
+                title: 'Batch ${b.batchCode}',
+                subtitle:
+                    'Qty ${b.quantity} · ${_formatAmount(b.sellingPrice)}$expiry',
+                icon: Icons.qr_code_2_outlined,
                 onTap: () => Navigator.pop(ctx, b),
               );
             },
@@ -197,13 +209,23 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     return showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Enter Quantity'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.numbers, color: Colors.deepPurple, size: 22),
+            SizedBox(width: 10),
+            Text('Enter Quantity'),
+          ],
+        ),
         content: TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Max: $maxQty',
-            hintText: 'Enter quantity',
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: TransactionFormUi.fieldDecoration(
+            ctx,
+            label: 'Quantity',
+            prefixIcon: Icons.shopping_cart_outlined,
+            hint: 'Max available: $maxQty',
           ),
         ),
         actions: [
@@ -211,7 +233,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () {
               final qty = double.tryParse(controller.text);
               if (qty != null && qty > 0 && qty <= maxQty) {
@@ -222,7 +244,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 );
               }
             },
-            child: const Text('OK'),
+            child: const Text('Add'),
           ),
         ],
       ),
@@ -290,131 +312,183 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   Widget build(BuildContext context) {
     final customerProvider = Provider.of<CustomerProvider>(context);
     final paymentProvider = Provider.of<PaymentMethodProvider>(context);
+    final paid = double.tryParse(_paidController.text) ?? 0;
+    final change = paid - _totalAmount;
+    final changeDisplay = change >= 0 ? change : 0.0;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('New Sale')),
+      appBar: AppBar(
+        title: const Text('New Sale'),
+        actions: [
+          if (_cart.isNotEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_cart.length} item${_cart.length == 1 ? '' : 's'}',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: Column(
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 children: [
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'Customer'),
-                    initialValue: _selectedCustomerId,
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('Walk‑in Customer'),
-                      ),
-                      ...customerProvider.customers.map(
-                        (c) => DropdownMenuItem(
-                          value: c.id,
-                          child: Text('${c.name} (${c.phone})'),
+                  TransactionFormUi.sectionHeader(
+                    icon: Icons.person_outline,
+                    title: 'Customer',
+                    subtitle: 'Optional — defaults to walk-in',
+                  ),
+                  TransactionFormUi.formCard(
+                    children: [
+                      DropdownButtonFormField<String>(
+                        decoration: TransactionFormUi.fieldDecoration(
+                          context,
+                          label: 'Customer',
+                          prefixIcon: Icons.people_outline,
                         ),
+                        initialValue: _selectedCustomerId,
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Walk‑in Customer'),
+                          ),
+                          ...customerProvider.customers.map(
+                            (c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text('${c.name} (${c.phone})'),
+                            ),
+                          ),
+                        ],
+                        onChanged: (val) =>
+                            setState(() => _selectedCustomerId = val),
                       ),
                     ],
-                    onChanged: (val) =>
-                        setState(() => _selectedCustomerId = val),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Cart',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  const SizedBox(height: 20),
+                  TransactionFormUi.sectionHeader(
+                    icon: Icons.shopping_cart_outlined,
+                    title: 'Cart',
+                    subtitle: _cart.isEmpty
+                        ? 'Add products to start the sale'
+                        : '${_cart.length} product${_cart.length == 1 ? '' : 's'} in cart',
                   ),
-                  const SizedBox(height: 8),
-                  ..._cart.asMap().entries.map((entry) {
-                    int idx = entry.key;
-                    CartItem item = entry.value;
-                    return Card(
-                      child: ListTile(
-                        title: Text(item.productName),
-                        subtitle: Text(
-                          'Batch: ${item.batchCode} | Qty: ${item.quantity} | Price: ${item.sellingPrice}',
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => setState(() => _cart.removeAt(idx)),
-                        ),
-                      ),
-                    );
-                  }),
                   if (_cart.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('No items. Tap + to add product.'),
-                    ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Payment Method *',
-                    ),
-                    initialValue: _selectedPaymentMethodId,
-                    items: paymentProvider.methods.map((method) {
-                      return DropdownMenuItem(
-                        value: method.id,
-                        child: Text(
-                          '${method.name} (Balance: ${method.currentBalance.toStringAsFixed(2)})',
-                        ),
+                    TransactionFormUi.emptyItemsState(
+                      message:
+                          'Your cart is empty.\nTap "Add Product" to add items.',
+                      icon: Icons.shopping_cart_outlined,
+                    )
+                  else
+                    ..._cart.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final item = entry.value;
+                      return TransactionFormUi.lineItemCard(
+                        title: item.productName,
+                        trailingAmount: _formatAmount(item.subtotal),
+                        chips: [
+                          'Batch ${item.batchCode}',
+                          'Qty ${item.quantity}',
+                          'Price ${_formatAmount(item.sellingPrice)}',
+                        ],
+                        onRemove: () => setState(() => _cart.removeAt(idx)),
                       );
-                    }).toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedPaymentMethodId = val),
-                    validator: (v) =>
-                        v == null ? 'Select payment method' : null,
+                    }),
+                  const SizedBox(height: 20),
+                  TransactionFormUi.sectionHeader(
+                    icon: Icons.account_balance_wallet_outlined,
+                    title: 'Payment',
+                    subtitle: 'How the customer is paying',
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Total: ${_totalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  TransactionFormUi.formCard(
+                    children: [
+                      DropdownButtonFormField<String>(
+                        decoration: TransactionFormUi.fieldDecoration(
+                          context,
+                          label: 'Payment Method *',
+                          prefixIcon: Icons.payment_outlined,
+                        ),
+                        initialValue: _selectedPaymentMethodId,
+                        items: paymentProvider.methods.map((method) {
+                          return DropdownMenuItem(
+                            value: method.id,
+                            child: Text(
+                              '${method.name} · ${_formatAmount(method.currentBalance)}',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) =>
+                            setState(() => _selectedPaymentMethodId = val),
+                        validator: (v) =>
+                            v == null ? 'Select payment method' : null,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _paidController,
-                    decoration: const InputDecoration(
-                      labelText: 'Amount Paid *',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => setState(() {}),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Required';
-                      if (double.tryParse(v) == null) return 'Invalid number';
-                      return null;
-                    },
+                  const SizedBox(height: 20),
+                  TransactionFormUi.sectionHeader(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Checkout',
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Change: ${(double.tryParse(_paidController.text) ?? 0) - _totalAmount >= 0 ? ((double.tryParse(_paidController.text) ?? 0) - _totalAmount).toStringAsFixed(2) : '0.00'}',
+                  TransactionFormUi.paymentSummaryCard(
+                    totalLabel: 'Sale total',
+                    totalValue: _formatAmount(_totalAmount),
+                    secondaryLabel: 'Change due',
+                    secondaryValue: _formatAmount(changeDisplay),
+                    secondaryColor: changeDisplay > 0
+                        ? Colors.greenAccent.shade100
+                        : Colors.white,
+                  ),
+                  const SizedBox(height: 14),
+                  TransactionFormUi.formCard(
+                    children: [
+                      TextFormField(
+                        controller: _paidController,
+                        decoration: TransactionFormUi.fieldDecoration(
+                          context,
+                          label: 'Amount Paid *',
+                          prefixIcon: Icons.paid_outlined,
+                          hint: 'Enter amount received',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Required';
+                          if (double.tryParse(v) == null) {
+                            return 'Invalid number';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _addProduct,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Product'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _saveSale,
-                      child: const Text('Complete Sale'),
-                    ),
-                  ),
-                ],
+            TransactionFormUi.bottomActionBar(
+              secondaryButton: TransactionFormUi.secondaryButton(
+                onPressed: _addProduct,
+                label: 'Add Product',
+                icon: Icons.add,
+              ),
+              primaryButton: TransactionFormUi.primaryButton(
+                onPressed: _saveSale,
+                label: 'Complete Sale',
+                icon: Icons.check_circle_outline,
               ),
             ),
           ],

@@ -1,3 +1,5 @@
+import 'package:dukabase/core/utils/currency_formatter.dart';
+import 'package:dukabase/core/widgets/transaction_form_ui.dart';
 import 'package:dukabase/features/payment_methods/providers/payment_method_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -146,135 +148,174 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     }
   }
 
+  String _formatAmount(double amount) =>
+      CurrencyFormatter.format(amount, widget.shop.currency);
+
   @override
   Widget build(BuildContext context) {
     final supplierProvider = Provider.of<SupplierProvider>(context);
     final productProvider = Provider.of<ProductProvider>(context);
     final paymentProvider = Provider.of<PaymentMethodProvider>(context);
+    final balance = _totalAmount - _paidAmount;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Purchase')),
+      appBar: AppBar(
+        title: const Text('New Purchase'),
+        actions: [
+          if (_items.isNotEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_items.length} item${_items.length == 1 ? '' : 's'}',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: Column(
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 children: [
-                  // Supplier dropdown
-                  DropdownButtonFormField<SupplierModel>(
-                    decoration: const InputDecoration(labelText: 'Supplier *'),
-                    items: supplierProvider.suppliers.map((s) {
-                      return DropdownMenuItem(value: s, child: Text(s.name));
-                    }).toList(),
-                    onChanged: (value) =>
-                        setState(() => _selectedSupplier = value),
-                    validator: (v) => v == null ? 'Select supplier' : null,
+                  TransactionFormUi.sectionHeader(
+                    icon: Icons.local_shipping_outlined,
+                    title: 'Supplier & payment',
+                    subtitle: 'Who you bought from and how you paid',
                   ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Payment Method *',
-                    ),
-                    initialValue: _selectedPaymentMethodId,
-                    items: paymentProvider.methods.map((method) {
-                      return DropdownMenuItem(
-                        value: method.id,
-                        child: Text(
-                          '${method.name} (Balance: ${method.currentBalance.toStringAsFixed(2)})',
+                  TransactionFormUi.formCard(
+                    children: [
+                      DropdownButtonFormField<SupplierModel>(
+                        decoration: TransactionFormUi.fieldDecoration(
+                          context,
+                          label: 'Supplier *',
+                          prefixIcon: Icons.store_outlined,
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedPaymentMethodId = val),
-                    validator: (v) =>
-                        v == null ? 'Select payment method' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  // Items list
-                  const Text(
-                    'Items',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ..._items.asMap().entries.map((entry) {
-                    int idx = entry.key;
-                    PurchaseItem item = entry.value;
-                    return Card(
-                      child: ListTile(
-                        title: Text(item.productName),
-                        subtitle: Text(
-                          'Batch: ${item.batchCode} | Qty: ${item.quantity} | Cost: ${item.costPrice} | Sell: ${item.sellingPrice}',
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => setState(() => _items.removeAt(idx)),
-                        ),
+                        items: supplierProvider.suppliers.map((s) {
+                          return DropdownMenuItem(value: s, child: Text(s.name));
+                        }).toList(),
+                        onChanged: (value) =>
+                            setState(() => _selectedSupplier = value),
+                        validator: (v) => v == null ? 'Select supplier' : null,
                       ),
-                    );
-                  }),
+                      const SizedBox(height: 14),
+                      DropdownButtonFormField<String>(
+                        decoration: TransactionFormUi.fieldDecoration(
+                          context,
+                          label: 'Payment Method *',
+                          prefixIcon: Icons.account_balance_wallet_outlined,
+                        ),
+                        initialValue: _selectedPaymentMethodId,
+                        items: paymentProvider.methods.map((method) {
+                          return DropdownMenuItem(
+                            value: method.id,
+                            child: Text(
+                              '${method.name} · ${_formatAmount(method.currentBalance)}',
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) =>
+                            setState(() => _selectedPaymentMethodId = val),
+                        validator: (v) =>
+                            v == null ? 'Select payment method' : null,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  TransactionFormUi.sectionHeader(
+                    icon: Icons.shopping_basket_outlined,
+                    title: 'Purchase items',
+                    subtitle: productProvider.products.isEmpty
+                        ? 'Add products to your shop first'
+                        : 'Tap Add Item below to include stock',
+                  ),
                   if (_items.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('No items added. Tap + to add.'),
-                    ),
-                  const SizedBox(height: 16),
-                  // Total amount
-                  Text(
-                    'Total Amount: ${_totalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    TransactionFormUi.emptyItemsState(
+                      message: 'No items yet.\nTap "Add Item" to add products to this purchase.',
+                      icon: Icons.add_shopping_cart_outlined,
+                    )
+                  else
+                    ..._items.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final item = entry.value;
+                      return TransactionFormUi.lineItemCard(
+                        title: item.productName,
+                        trailingAmount: _formatAmount(item.subtotal),
+                        chips: [
+                          'Batch ${item.batchCode}',
+                          'Qty ${item.quantity}',
+                          'Cost ${_formatAmount(item.costPrice)}',
+                          'Sell ${_formatAmount(item.sellingPrice)}',
+                        ],
+                        onRemove: () => setState(() => _items.removeAt(idx)),
+                      );
+                    }),
+                  const SizedBox(height: 20),
+                  TransactionFormUi.sectionHeader(
+                    icon: Icons.payments_outlined,
+                    title: 'Payment details',
                   ),
-                  const SizedBox(height: 16),
-                  // Paid amount
-                  TextFormField(
-                    controller: _paidController,
-                    decoration: const InputDecoration(
-                      labelText: 'Amount Paid *',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      _paidAmount = double.tryParse(value) ?? 0;
-                    },
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Required';
-                      if (double.tryParse(v) == null) return 'Invalid number';
-                      return null;
-                    },
+                  TransactionFormUi.paymentSummaryCard(
+                    totalLabel: 'Total amount',
+                    totalValue: _formatAmount(_totalAmount),
+                    secondaryLabel: balance > 0 ? 'Outstanding balance' : 'Fully paid',
+                    secondaryValue: _formatAmount(balance.abs()),
+                    secondaryColor: balance > 0
+                        ? Colors.orange.shade200
+                        : Colors.greenAccent.shade100,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Balance: ${(_totalAmount - _paidAmount).toStringAsFixed(2)}',
-                    style: const TextStyle(fontStyle: FontStyle.italic),
+                  const SizedBox(height: 14),
+                  TransactionFormUi.formCard(
+                    children: [
+                      TextFormField(
+                        controller: _paidController,
+                        decoration: TransactionFormUi.fieldDecoration(
+                          context,
+                          label: 'Amount Paid *',
+                          prefixIcon: Icons.paid_outlined,
+                          hint: 'Enter amount paid now',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onChanged: (value) {
+                          _paidAmount = double.tryParse(value) ?? 0;
+                          setState(() {});
+                        },
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Required';
+                          if (double.tryParse(v) == null) {
+                            return 'Invalid number';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _addItem,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Item'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _savePurchase,
-                      child: const Text('Save Purchase'),
-                    ),
-                  ),
-                ],
+            TransactionFormUi.bottomActionBar(
+              secondaryButton: TransactionFormUi.secondaryButton(
+                onPressed: _addItem,
+                label: 'Add Item',
+                icon: Icons.add,
+              ),
+              primaryButton: TransactionFormUi.primaryButton(
+                onPressed: _savePurchase,
+                label: 'Save Purchase',
+                icon: Icons.save_outlined,
               ),
             ),
           ],
@@ -357,105 +398,166 @@ class _AddPurchaseItemScreenState extends State<AddPurchaseItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Item to Purchase')),
-
+      appBar: AppBar(title: const Text('Add Item')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-
             children: [
-              DropdownButtonFormField<ProductModel>(
-                decoration: const InputDecoration(labelText: 'Product *'),
-
-                items: widget.products.map((p) {
-                  return DropdownMenuItem(
-                    value: p,
-                    child: Text(p.name, overflow: TextOverflow.ellipsis),
-                  );
-                }).toList(),
-
-                onChanged: (value) {
-                  setState(() => _selectedProduct = value);
-                },
+              TransactionFormUi.sectionHeader(
+                icon: Icons.inventory_2_outlined,
+                title: 'Product details',
+                subtitle: 'Select product and batch information',
               ),
-
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: _batchCodeController,
-                decoration: const InputDecoration(labelText: 'Batch Code *'),
-              ),
-
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: _quantityController,
-                decoration: const InputDecoration(labelText: 'Quantity *'),
-                keyboardType: TextInputType.number,
-              ),
-
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: _costPriceController,
-                decoration: const InputDecoration(labelText: 'Cost Price *'),
-                keyboardType: TextInputType.number,
-              ),
-
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: _sellingPriceController,
-                decoration: const InputDecoration(labelText: 'Selling Price *'),
-                keyboardType: TextInputType.number,
-              ),
-
-              const SizedBox(height: 12),
-
-              Card(
-                child: ListTile(
-                  title: const Text('Expiry Date (optional)'),
-
-                  subtitle: _expiryDate == null
-                      ? const Text('Not set')
-                      : Text(_expiryDate!.toLocal().toString().split(' ')[0]),
-
-                  trailing: IconButton(
-                    icon: const Icon(Icons.calendar_today),
-
-                    onPressed: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(
-                          const Duration(days: 365 * 5),
-                        ),
+              TransactionFormUi.formCard(
+                children: [
+                  DropdownButtonFormField<ProductModel>(
+                    decoration: TransactionFormUi.fieldDecoration(
+                      context,
+                      label: 'Product *',
+                      prefixIcon: Icons.category_outlined,
+                    ),
+                    items: widget.products.map((p) {
+                      return DropdownMenuItem(
+                        value: p,
+                        child: Text(p.name, overflow: TextOverflow.ellipsis),
                       );
-
-                      if (date != null) {
-                        setState(() => _expiryDate = date);
-                      }
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() => _selectedProduct = value);
                     },
                   ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _batchCodeController,
+                    decoration: TransactionFormUi.fieldDecoration(
+                      context,
+                      label: 'Batch Code *',
+                      prefixIcon: Icons.qr_code_2_outlined,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TransactionFormUi.sectionHeader(
+                icon: Icons.calculate_outlined,
+                title: 'Quantity & pricing',
+              ),
+              TransactionFormUi.formCard(
+                children: [
+                  TextFormField(
+                    controller: _quantityController,
+                    decoration: TransactionFormUi.fieldDecoration(
+                      context,
+                      label: 'Quantity *',
+                      prefixIcon: Icons.numbers_outlined,
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _costPriceController,
+                          decoration: TransactionFormUi.fieldDecoration(
+                            context,
+                            label: 'Cost Price *',
+                            prefixIcon: Icons.arrow_downward,
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _sellingPriceController,
+                          decoration: TransactionFormUi.fieldDecoration(
+                            context,
+                            label: 'Sell Price *',
+                            prefixIcon: Icons.arrow_upward,
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TransactionFormUi.sectionHeader(
+                icon: Icons.event_outlined,
+                title: 'Expiry (optional)',
+              ),
+              InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(
+                      const Duration(days: 365 * 5),
+                    ),
+                  );
+                  if (date != null) {
+                    setState(() => _expiryDate = date);
+                  }
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: TransactionFormUi.formCard(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_month_outlined,
+                          color: Colors.deepPurple.shade300,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Expiry date',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _expiryDate == null
+                                    ? 'Tap to set expiry date'
+                                    : _expiryDate!
+                                          .toLocal()
+                                          .toString()
+                                          .split(' ')
+                                          .first,
+                                style: TextStyle(
+                                  color: _expiryDate == null
+                                      ? Colors.grey.shade600
+                                      : Colors.deepPurple,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-
-                child: ElevatedButton(
-                  onPressed: _save,
-
-                  child: const Text('Add to Purchase'),
-                ),
+              TransactionFormUi.primaryButton(
+                onPressed: _save,
+                label: 'Add to Purchase',
+                icon: Icons.add_shopping_cart,
               ),
-
               const SizedBox(height: 20),
             ],
           ),
