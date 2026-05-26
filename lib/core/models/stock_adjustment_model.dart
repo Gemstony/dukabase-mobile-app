@@ -37,15 +37,20 @@ class StockAdjustmentModel {
   }
 
   factory StockAdjustmentModel.fromMap(String id, Map<String, dynamic> map) {
+    final createdRaw = map['createdAt'];
+    final createdAt = createdRaw is Timestamp
+        ? createdRaw.toDate()
+        : DateTime.now();
+
     return StockAdjustmentModel(
       id: id,
       shopId: map['shopId'] as String,
       productId: map['productId'] as String,
       batchId: map['batchId'] as String,
       reason: map['reason'] as String,
-      quantityChange: (map['quantityChange'] as num).toDouble(),
+      quantityChange: ((map['quantityChange'] as num?) ?? 0).toDouble(),
       note: map['note'] as String?,
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      createdAt: createdAt,
       createdBy: map['createdBy'] as String,
     );
   }

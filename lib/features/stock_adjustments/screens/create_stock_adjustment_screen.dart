@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dukabase/core/utils/connectivity_helper.dart';
 import 'package:dukabase/features/auth/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +7,7 @@ import '../../products/providers/product_provider.dart';
 import '../../../core/models/shop_model.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/batch_model.dart';
+import '../../../core/services/product_service.dart';
 
 class CreateStockAdjustmentScreen extends StatefulWidget {
   final ShopModel shop;
@@ -19,6 +20,7 @@ class CreateStockAdjustmentScreen extends StatefulWidget {
 
 class _CreateStockAdjustmentScreenState
     extends State<CreateStockAdjustmentScreen> {
+  final _productService = ProductService();
   final _formKey = GlobalKey<FormState>();
   ProductModel? _selectedProduct;
   BatchModel? _selectedBatch;
@@ -93,21 +95,21 @@ class _CreateStockAdjustmentScreenState
 
   Future<void> _loadBatches(String productId) async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('shops')
-          .doc(widget.shop.id)
-          .collection('products')
-          .doc(productId)
-          .collection('batches')
-          .get();
-      final batches = snapshot.docs
-          .map((doc) => BatchModel.fromMap(doc.id, doc.data()))
-          .where((batch) => batch.quantity > 0)
-          .toList();
+      final batches = await _productService.getActiveBatches(
+        widget.shop.id,
+        productId,
+      );
+      if (!mounted) return;
       if (batches.isEmpty) {
+        final offline = !await ConnectivityHelper.isOnline();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No active batches for this product'),
+          SnackBar(
+            content: Text(
+              offline
+                  ? 'No batch data for this product on this device. '
+                        'Open the shop while online once, or add stock first.'
+                  : 'No active batches for this product',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -188,7 +190,7 @@ class _CreateStockAdjustmentScreenState
       listen: false,
     );
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await provider.recordAdjustment(
+    final result = await provider.recordAdjustment(
       shopId: widget.shop.id,
       productId: _selectedProduct!.id,
       batchId: _selectedBatch!.id,
@@ -199,15 +201,13 @@ class _CreateStockAdjustmentScreenState
           : _noteController.text.trim(),
       createdBy: authProvider.currentUser!.id,
     );
+    if (!mounted) return;
     setState(() => _isLoading = false);
-    if (success) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Stock adjustment recorded'),
-          backgroundColor: Colors.green,
-        ),
-      );
+    if (result.success) {
+      final message = result.pendingSync
+          ? 'Adjustment saved offline — will sync when you\'re back online'
+          : 'Stock adjustment recorded successfully';
+      Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -273,20 +273,32 @@ class _CreateStockAdjustmentScreenState
                 onChanged: (val) => setState(() => _selectedReason = val!),
               ),
               const SizedBox(height: 12),
-              // Quantity change (positive = add, negative = subtract)
               TextFormField(
                 controller: _quantityController,
+
                 decoration: const InputDecoration(
                   labelText:
                       'Quantity Change (positive = add, negative = remove) *',
                   hintText: 'e.g., 5 or -3',
                 ),
-                keyboardType: TextInputType.number,
+
+                keyboardType: TextInputType.text,
+
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Required';
+                  if (v == null || v.isEmpty) {
+                    return 'Required';
+                  }
+
                   final qty = double.tryParse(v);
-                  if (qty == null) return 'Invalid number';
-                  if (qty == 0) return 'Quantity cannot be zero';
+
+                  if (qty == null) {
+                    return 'Invalid number';
+                  }
+
+                  if (qty == 0) {
+                    return 'Quantity cannot be zero';
+                  }
+
                   return null;
                 },
               ),

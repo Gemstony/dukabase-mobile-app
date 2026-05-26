@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/models/record_write_result.dart';
 import '../../../core/services/stock_adjustment_service.dart';
 import '../../../core/models/stock_adjustment_model.dart';
 
@@ -27,7 +28,7 @@ class StockAdjustmentProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> recordAdjustment({
+  Future<RecordWriteResult> recordAdjustment({
     required String shopId,
     required String productId,
     required String batchId,
@@ -38,7 +39,7 @@ class StockAdjustmentProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    final success = await _service.recordAdjustment(
+    final result = await _service.recordAdjustment(
       shopId: shopId,
       productId: productId,
       batchId: batchId,
@@ -48,11 +49,11 @@ class StockAdjustmentProvider extends ChangeNotifier {
       createdBy: createdBy,
     );
     _isLoading = false;
-    if (!success) {
+    if (!result.success) {
       _error = 'Failed to record adjustment';
       notifyListeners();
     }
-    return success;
+    return result;
   }
 
   void clearError() {

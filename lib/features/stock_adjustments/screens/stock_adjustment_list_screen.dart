@@ -67,14 +67,24 @@ class _StockAdjustmentListScreenState extends State<StockAdjustmentListScreen> {
                 ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CreateStockAdjustmentScreen(shop: widget.shop),
-            ),
-          );
-        },
+        onPressed: _openCreateAdjustment,
+      ),
+    );
+  }
+
+  Future<void> _openCreateAdjustment() async {
+    final message = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateStockAdjustmentScreen(shop: widget.shop),
+      ),
+    );
+    if (!mounted || message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -89,14 +99,7 @@ class _StockAdjustmentListScreenState extends State<StockAdjustmentListScreen> {
           const Text('No stock adjustments yet'),
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CreateStockAdjustmentScreen(shop: widget.shop),
-                ),
-              );
-            },
+            onPressed: _openCreateAdjustment,
             child: const Text('Create Adjustment'),
           ),
         ],

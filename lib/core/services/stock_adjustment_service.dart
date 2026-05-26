@@ -1,11 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+
+import '../models/record_write_result.dart';
 import '../models/stock_adjustment_model.dart';
+import '../utils/firestore_write_helper.dart';
 
 class StockAdjustmentService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Record a stock adjustment (atomic batch write)
-  Future<bool> recordAdjustment({
+  Future<RecordWriteResult> recordAdjustment({
     required String shopId,
     required String productId,
     required String batchId,
@@ -59,11 +63,10 @@ class StockAdjustmentService {
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
-      await batch.commit();
-      return true;
+      return FirestoreWriteHelper.commitBatch(batch);
     } catch (e) {
-      print('Record stock adjustment error: $e');
-      return false;
+      debugPrint('Record stock adjustment error: $e');
+      return const RecordWriteResult(success: false);
     }
   }
 
@@ -75,8 +78,10 @@ class StockAdjustmentService {
         .collection('stockAdjustments')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => StockAdjustmentModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => StockAdjustmentModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 }
