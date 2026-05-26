@@ -248,7 +248,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       return;
     }
     if (!_formKey.currentState!.validate()) return;
-    
+
     final paid = double.tryParse(_paidController.text);
     if (paid == null || paid < 0) {
       _showSnackBar('Enter valid paid amount');
@@ -299,122 +299,126 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),
-              children: [
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Customer'),
-                  initialValue: _selectedCustomerId,
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('Walk‑in Customer'),
-                    ),
-                    ...customerProvider.customers.map(
-                      (c) => DropdownMenuItem(
-                        value: c.id,
-                        child: Text('${c.name} (${c.phone})'),
+                children: [
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(labelText: 'Customer'),
+                    initialValue: _selectedCustomerId,
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Walk‑in Customer'),
                       ),
-                    ),
-                  ],
-                  onChanged: (val) => setState(() => _selectedCustomerId = val),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Cart',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                ..._cart.asMap().entries.map((entry) {
-                  int idx = entry.key;
-                  CartItem item = entry.value;
-                  return Card(
-                    child: ListTile(
-                      title: Text(item.productName),
-                      subtitle: Text(
-                        'Batch: ${item.batchCode} | Qty: ${item.quantity} | Price: ${item.sellingPrice}',
+                      ...customerProvider.customers.map(
+                        (c) => DropdownMenuItem(
+                          value: c.id,
+                          child: Text('${c.name} (${c.phone})'),
+                        ),
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => setState(() => _cart.removeAt(idx)),
-                      ),
-                    ),
-                  );
-                }),
-                if (_cart.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('No items. Tap + to add product.'),
+                    ],
+                    onChanged: (val) =>
+                        setState(() => _selectedCustomerId = val),
                   ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Payment Method *',
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Cart',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  initialValue: _selectedPaymentMethodId,
-                  items: paymentProvider.methods.map((method) {
-                    return DropdownMenuItem(
-                      value: method.id,
-                      child: Text(
-                        '${method.name} (Balance: ${method.currentBalance.toStringAsFixed(2)})',
+                  const SizedBox(height: 8),
+                  ..._cart.asMap().entries.map((entry) {
+                    int idx = entry.key;
+                    CartItem item = entry.value;
+                    return Card(
+                      child: ListTile(
+                        title: Text(item.productName),
+                        subtitle: Text(
+                          'Batch: ${item.batchCode} | Qty: ${item.quantity} | Price: ${item.sellingPrice}',
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => setState(() => _cart.removeAt(idx)),
+                        ),
                       ),
                     );
-                  }).toList(),
-                  onChanged: (val) =>
-                      setState(() => _selectedPaymentMethodId = val),
-                  validator: (v) => v == null ? 'Select payment method' : null,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Total: ${_totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  }),
+                  if (_cart.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('No items. Tap + to add product.'),
+                    ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      labelText: 'Payment Method *',
+                    ),
+                    initialValue: _selectedPaymentMethodId,
+                    items: paymentProvider.methods.map((method) {
+                      return DropdownMenuItem(
+                        value: method.id,
+                        child: Text(
+                          '${method.name} (Balance: ${method.currentBalance.toStringAsFixed(2)})',
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) =>
+                        setState(() => _selectedPaymentMethodId = val),
+                    validator: (v) =>
+                        v == null ? 'Select payment method' : null,
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _paidController,
-                  decoration: const InputDecoration(labelText: 'Amount Paid *'),
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => setState(() {}),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Required';
-                    if (double.tryParse(v) == null) return 'Invalid number';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Change: ${(double.tryParse(_paidController.text) ?? 0) - _totalAmount >= 0 ? ((double.tryParse(_paidController.text) ?? 0) - _totalAmount).toStringAsFixed(2) : '0.00'}',
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _addProduct,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Product'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
+                  const SizedBox(height: 16),
+                  Text(
+                    'Total: ${_totalAmount.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _saveSale,
-                    child: const Text('Complete Sale'),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _paidController,
+                    decoration: const InputDecoration(
+                      labelText: 'Amount Paid *',
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Required';
+                      if (double.tryParse(v) == null) return 'Invalid number';
+                      return null;
+                    },
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Change: ${(double.tryParse(_paidController.text) ?? 0) - _totalAmount >= 0 ? ((double.tryParse(_paidController.text) ?? 0) - _totalAmount).toStringAsFixed(2) : '0.00'}',
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _addProduct,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Product'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _saveSale,
+                      child: const Text('Complete Sale'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

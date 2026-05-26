@@ -599,7 +599,7 @@ class _PaymentMethodDetailsScreenState
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<PaymentMethodType>(
-                      value: selectedType,
+                      initialValue: selectedType,
                       decoration:
                           const InputDecoration(labelText: 'Type'),
                       items: PaymentMethodType.values

@@ -7,8 +7,6 @@ import 'package:intl/intl.dart';
 import '../../../core/models/shop_model.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/batch_model.dart';
-import '../../../core/models/sale_model.dart';
-import '../../../core/models/purchase_model.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 
