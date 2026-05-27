@@ -1,13 +1,15 @@
 class DashboardData {
   final double todaySales;
   final double todayExpenses;
-  final double todayProfit; // todaySales - todayExpenses (simplified; COGS later)
+  final double
+  todayProfit; // todaySales - todayExpenses (simplified; COGS later)
   final int totalProducts;
   final int lowStockProducts;
   final int activeSuppliers;
   final int activeCustomers;
   final double totalOutstandingCredit; // sum of customer balances positive
-  final double totalPendingBills; // sum of purchase balances positive (money owed to suppliers)
+  final double
+  totalPendingBills; // sum of purchase balances positive (money owed to suppliers)
   final List<LowStockProduct> lowStockItems;
 
   DashboardData({

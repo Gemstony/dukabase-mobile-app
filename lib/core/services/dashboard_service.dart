@@ -34,7 +34,11 @@ class DashboardService {
   }
 
   Stream<double> _getTodaySales(String shopId) {
-    final start = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final start = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
     final end = start.add(const Duration(days: 1));
     return _firestore
         .collection('shops')
@@ -43,11 +47,20 @@ class DashboardService {
         .where('createdAt', isGreaterThanOrEqualTo: start)
         .where('createdAt', isLessThan: end)
         .snapshots()
-        .map((snapshot) => snapshot.docs.fold(0.0, (sum, doc) => sum + (doc.data()['totalAmount'] as num).toDouble()));
+        .map(
+          (snapshot) => snapshot.docs.fold(
+            0.0,
+            (sum, doc) => sum + (doc.data()['totalAmount'] as num).toDouble(),
+          ),
+        );
   }
 
   Stream<double> _getTodayExpenses(String shopId) {
-    final start = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final start = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
     final end = start.add(const Duration(days: 1));
     return _firestore
         .collection('shops')
@@ -56,7 +69,12 @@ class DashboardService {
         .where('expenseDate', isGreaterThanOrEqualTo: start)
         .where('expenseDate', isLessThan: end)
         .snapshots()
-        .map((snapshot) => snapshot.docs.fold(0.0, (sum, doc) => sum + (doc.data()['amount'] as num).toDouble()));
+        .map(
+          (snapshot) => snapshot.docs.fold(
+            0.0,
+            (sum, doc) => sum + (doc.data()['amount'] as num).toDouble(),
+          ),
+        );
   }
 
   Stream<List<LowStockProduct>> _getProductsLowStock(String shopId) {
@@ -70,13 +88,15 @@ class DashboardService {
           for (var doc in snapshot.docs) {
             final product = ProductModel.fromMap(doc.id, doc.data());
             if (product.currentStock <= product.lowStockAlert) {
-              lowStock.add(LowStockProduct(
-                productId: product.id,
-                name: product.name,
-                currentStock: product.currentStock,
-                threshold: product.lowStockAlert,
-                unit: product.unit,
-              ));
+              lowStock.add(
+                LowStockProduct(
+                  productId: product.id,
+                  name: product.name,
+                  currentStock: product.currentStock,
+                  threshold: product.lowStockAlert,
+                  unit: product.unit,
+                ),
+              );
             }
           }
           return lowStock;
@@ -89,9 +109,11 @@ class DashboardService {
         .doc(shopId)
         .collection('products')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ProductModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ProductModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 
   Stream<List<SupplierModel>> _getSuppliers(String shopId) {
@@ -100,9 +122,11 @@ class DashboardService {
         .doc(shopId)
         .collection('suppliers')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => SupplierModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => SupplierModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 
   // Additional separate streams for customers and credit can be added later

@@ -27,6 +27,7 @@ import 'features/reports/providers/income_report_provider.dart';
 import 'features/reports/providers/expense_report_provider.dart';
 
 import 'features/staff/providers/staff_provider.dart';
+import 'features/profile/providers/profile_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,6 +67,7 @@ class DukaBaseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ExpenseReportProvider()),
 
         ChangeNotifierProvider(create: (_) => StaffProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: MaterialApp(
         title: 'DukaBase',

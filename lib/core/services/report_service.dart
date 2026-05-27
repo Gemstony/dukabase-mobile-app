@@ -330,38 +330,40 @@ class ReportService {
 
   // ---------- PRODUCT REPORT ----------
 
-// ---------- PRODUCT REPORT ----------
+  // ---------- PRODUCT REPORT ----------
 
-/// Get list of all products with pagination.
-Stream<QuerySnapshot<Map<String, dynamic>>> getProductsPaginated(
-  String shopId, {
-  int limit = 20,
-  DocumentSnapshot? lastDocument,
-}) {
-  var query = _firestore
-      .collection('shops')
-      .doc(shopId)
-      .collection('products')
-      .orderBy('name')
-      .limit(limit);
-  if (lastDocument != null) {
-    query = query.startAfterDocument(lastDocument);
+  /// Get list of all products with pagination.
+  Stream<QuerySnapshot<Map<String, dynamic>>> getProductsPaginated(
+    String shopId, {
+    int limit = 20,
+    DocumentSnapshot? lastDocument,
+  }) {
+    var query = _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('products')
+        .orderBy('name')
+        .limit(limit);
+    if (lastDocument != null) {
+      query = query.startAfterDocument(lastDocument);
+    }
+    return query.snapshots();
   }
-  return query.snapshots();
-}
 
-/// Get low stock products (client‑side filter, real‑time stream)
-Stream<List<ProductModel>> getLowStockProductsStream(String shopId) {
-  return _firestore
-      .collection('shops')
-      .doc(shopId)
-      .collection('products')
-      .snapshots()
-      .map((snapshot) => snapshot.docs
-          .map((doc) => ProductModel.fromMap(doc.id, doc.data()))
-          .where((product) => product.currentStock <= product.lowStockAlert)
-          .toList());
-}
+  /// Get low stock products (client‑side filter, real‑time stream)
+  Stream<List<ProductModel>> getLowStockProductsStream(String shopId) {
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('products')
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ProductModel.fromMap(doc.id, doc.data()))
+              .where((product) => product.currentStock <= product.lowStockAlert)
+              .toList(),
+        );
+  }
 
   // ---------- INCOME REPORT (Simplified) ----------
   // ---------- INCOME REPORT ----------
@@ -403,30 +405,30 @@ Stream<List<ProductModel>> getLowStockProductsStream(String shopId) {
     // Fetch all sale items and sum costPrice * quantity (if you stored costPrice in sale items)
     // This is a heavier operation; you may decide to skip or implement later.
     // We'll provide a placeholder that returns 0, but you can uncomment the following logic.
-    
-  for (var saleDoc in salesSnapshot.docs) {
-    final itemsSnapshot = await saleDoc.reference.collection('items').get();
-    for (var itemDoc in itemsSnapshot.docs) {
-      final data = itemDoc.data();
-      final batchId = data['batchId'];
-      final productId = data['productId'];
-      final quantity = (data['quantity'] as num).toDouble();
-      // Fetch batch cost price
-      final batchDoc = await _firestore
-          .collection('shops')
-          .doc(shopId)
-          .collection('products')
-          .doc(productId)
-          .collection('batches')
-          .doc(batchId)
-          .get();
-      if (batchDoc.exists) {
-        final costPrice = (batchDoc.data()?['costPrice'] as num).toDouble() ?? 0;
-        totalCogs += quantity * costPrice;
+
+    for (var saleDoc in salesSnapshot.docs) {
+      final itemsSnapshot = await saleDoc.reference.collection('items').get();
+      for (var itemDoc in itemsSnapshot.docs) {
+        final data = itemDoc.data();
+        final batchId = data['batchId'];
+        final productId = data['productId'];
+        final quantity = (data['quantity'] as num).toDouble();
+        // Fetch batch cost price
+        final batchDoc = await _firestore
+            .collection('shops')
+            .doc(shopId)
+            .collection('products')
+            .doc(productId)
+            .collection('batches')
+            .doc(batchId)
+            .get();
+        if (batchDoc.exists) {
+          final costPrice =
+              (batchDoc.data()?['costPrice'] as num).toDouble() ?? 0;
+          totalCogs += quantity * costPrice;
+        }
       }
     }
-  }
-  
 
     final grossProfit = totalRevenue - totalCogs;
     final netProfit = grossProfit - totalExpenses;

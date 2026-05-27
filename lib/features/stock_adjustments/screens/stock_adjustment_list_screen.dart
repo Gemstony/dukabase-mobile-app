@@ -66,8 +66,8 @@ class _StockAdjustmentListScreenState extends State<StockAdjustmentListScreen> {
                   },
                 ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
         onPressed: _openCreateAdjustment,
+        child: const Icon(Icons.add),
       ),
     );
   }

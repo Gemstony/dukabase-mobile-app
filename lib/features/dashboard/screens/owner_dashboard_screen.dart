@@ -67,17 +67,50 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       crossAxisSpacing: 16,
       childAspectRatio: 1.3,
       children: [
-        _kpiCard('Today Sales', data.todaySales, Icons.trending_up, const [Color(0xFF38ef7d), Color(0xFF11998e)]),
-        _kpiCard('Today Expenses', data.todayExpenses, Icons.receipt_long, const [Color(0xFFff9966), Color(0xFFff5e62)]),
-        _kpiCard('Today Profit', data.todayProfit, Icons.account_balance_wallet, const [Color(0xFF56CCF2), Color(0xFF2F80ED)]),
-        _kpiCard('Total Products', data.totalProducts.toDouble(), Icons.inventory_2, const [Color(0xFFa8c0ff), Color(0xFF3f2b96)]),
-        _kpiCard('Low Stock Alerts', data.lowStockProducts.toDouble(), Icons.warning_amber_rounded, const [Color(0xFFF2C94C), Color(0xFFF2994A)]),
-        _kpiCard('Active Suppliers', data.activeSuppliers.toDouble(), Icons.local_shipping, const [Color(0xFF1D976C), Color(0xFF93F9B9)]),
+        _kpiCard('Today Sales', data.todaySales, Icons.trending_up, const [
+          Color(0xFF38ef7d),
+          Color(0xFF11998e),
+        ]),
+        _kpiCard(
+          'Today Expenses',
+          data.todayExpenses,
+          Icons.receipt_long,
+          const [Color(0xFFff9966), Color(0xFFff5e62)],
+        ),
+        _kpiCard(
+          'Today Profit',
+          data.todayProfit,
+          Icons.account_balance_wallet,
+          const [Color(0xFF56CCF2), Color(0xFF2F80ED)],
+        ),
+        _kpiCard(
+          'Total Products',
+          data.totalProducts.toDouble(),
+          Icons.inventory_2,
+          const [Color(0xFFa8c0ff), Color(0xFF3f2b96)],
+        ),
+        _kpiCard(
+          'Low Stock Alerts',
+          data.lowStockProducts.toDouble(),
+          Icons.warning_amber_rounded,
+          const [Color(0xFFF2C94C), Color(0xFFF2994A)],
+        ),
+        _kpiCard(
+          'Active Suppliers',
+          data.activeSuppliers.toDouble(),
+          Icons.local_shipping,
+          const [Color(0xFF1D976C), Color(0xFF93F9B9)],
+        ),
       ],
     );
   }
 
-  Widget _kpiCard(String title, double value, IconData icon, List<Color> gradientColors) {
+  Widget _kpiCard(
+    String title,
+    double value,
+    IconData icon,
+    List<Color> gradientColors,
+  ) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -102,7 +135,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
           const SizedBox(height: 8),
           Text(
             title,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white70,
+            ),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -112,7 +149,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                value.toStringAsFixed(value == value.truncateToDouble() ? 0 : 2),
+                value.toStringAsFixed(
+                  value == value.truncateToDouble() ? 0 : 2,
+                ),
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -147,24 +186,64 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
           childAspectRatio: 2.5,
           children: [
             _actionButton('New Sale', Icons.sell, Colors.blue.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => NewSaleScreen(shop: widget.shop)));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NewSaleScreen(shop: widget.shop),
+                ),
+              );
             }),
-            _actionButton('Sales List', Icons.list_alt, Colors.teal.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => SalesListScreen(shop: widget.shop)));
-            }),
-            _actionButton('Purchases', Icons.inventory_2, Colors.purple.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => PurchasesListScreen(shop: widget.shop)));
-            }),
-            _actionButton('Expenses', Icons.receipt_long, Colors.orange.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => ExpenseListScreen(shop: widget.shop)));
-            }),
+            _actionButton(
+              'Sales List',
+              Icons.list_alt,
+              Colors.teal.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SalesListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
+            _actionButton(
+              'Purchases',
+              Icons.inventory_2,
+              Colors.purple.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PurchasesListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
+            _actionButton(
+              'Expenses',
+              Icons.receipt_long,
+              Colors.orange.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ExpenseListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _actionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
+  Widget _actionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(

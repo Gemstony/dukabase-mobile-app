@@ -22,8 +22,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      Provider.of<DashboardProvider>(context, listen: false)
-          .loadDashboard(widget.shop.id);
+      Provider.of<DashboardProvider>(
+        context,
+        listen: false,
+      ).loadDashboard(widget.shop.id);
     });
   }
 
@@ -35,22 +37,22 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null
-              ? Center(child: Text('Error: ${provider.error}'))
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    provider.loadDashboard(widget.shop.id);
-                  },
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        _buildStaffStats(provider.data!),
-                        const SizedBox(height: 24),
-                        _buildQuickActions(),
-                      ],
-                    ),
-                  ),
+          ? Center(child: Text('Error: ${provider.error}'))
+          : RefreshIndicator(
+              onRefresh: () async {
+                provider.loadDashboard(widget.shop.id);
+              },
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildStaffStats(provider.data!),
+                    const SizedBox(height: 24),
+                    _buildQuickActions(),
+                  ],
                 ),
+              ),
+            ),
     );
   }
 
@@ -86,9 +88,23 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _statItem('Sales', data.todaySales, Icons.shopping_cart, Colors.greenAccent),
-              Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
-              _statItem('Expenses', data.todayExpenses, Icons.receipt, Colors.redAccent),
+              _statItem(
+                'Sales',
+                data.todaySales,
+                Icons.shopping_cart,
+                Colors.greenAccent,
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: Colors.white.withOpacity(0.3),
+              ),
+              _statItem(
+                'Expenses',
+                data.todayExpenses,
+                Icons.receipt,
+                Colors.redAccent,
+              ),
             ],
           ),
         ],
@@ -103,7 +119,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white70),
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            color: Colors.white70,
+          ),
         ),
         Text(
           value.toStringAsFixed(2),
@@ -137,27 +156,77 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           childAspectRatio: 2.5,
           children: [
             _actionButton('New Sale', Icons.sell, Colors.blue.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => NewSaleScreen(shop: widget.shop)));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NewSaleScreen(shop: widget.shop),
+                ),
+              );
             }),
-            _actionButton('Sales List', Icons.list_alt, Colors.teal.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => SalesListScreen(shop: widget.shop)));
-            }),
-            _actionButton('Purchases', Icons.inventory_2, Colors.purple.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => PurchasesListScreen(shop: widget.shop)));
-            }),
-            _actionButton('Expenses', Icons.receipt_long, Colors.orange.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => ExpenseListScreen(shop: widget.shop)));
-            }),
-            _actionButton('Products', Icons.inventory, Colors.indigo.shade600, () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => ProductListScreen(shop: widget.shop)));
-            }),
+            _actionButton(
+              'Sales List',
+              Icons.list_alt,
+              Colors.teal.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SalesListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
+            _actionButton(
+              'Purchases',
+              Icons.inventory_2,
+              Colors.purple.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PurchasesListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
+            _actionButton(
+              'Expenses',
+              Icons.receipt_long,
+              Colors.orange.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ExpenseListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
+            _actionButton(
+              'Products',
+              Icons.inventory,
+              Colors.indigo.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProductListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _actionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
+  Widget _actionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(

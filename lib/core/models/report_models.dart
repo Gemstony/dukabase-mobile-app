@@ -40,10 +40,7 @@ class ExpenseCategoryItem {
   final String category;
   final double totalAmount;
 
-  ExpenseCategoryItem({
-    required this.category,
-    required this.totalAmount,
-  });
+  ExpenseCategoryItem({required this.category, required this.totalAmount});
 }
 
 class IncomeSummary {

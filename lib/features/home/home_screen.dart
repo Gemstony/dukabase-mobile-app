@@ -6,6 +6,7 @@ import 'package:dukabase/features/expenses/screens/expense_list_screen.dart';
 import 'package:dukabase/features/invitations/screens/invitations_screen.dart';
 import 'package:dukabase/features/invitations/screens/owner_invitations_screen.dart';
 import 'package:dukabase/features/payment_methods/screens/payment_method_list_screen.dart';
+import 'package:dukabase/features/profile/screens/profile_screen.dart';
 import 'package:dukabase/features/reports/screens/expense_report_screen.dart';
 import 'package:dukabase/features/reports/screens/income_report_screen.dart';
 import 'package:dukabase/features/reports/screens/product_report_screen.dart';
@@ -305,7 +306,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   _navigateToBackup(context, shopProvider.currentShop);
                 },
               ),
-
+              ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
