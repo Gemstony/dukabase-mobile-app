@@ -31,7 +31,10 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
     final balance = double.tryParse(_balanceController.text);
     if (balance == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid balance'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Invalid balance'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -52,7 +55,10 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
       Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Failed'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(provider.error ?? 'Failed'),
+          backgroundColor: Colors.red,
+        ),
       );
       provider.clearError();
     }
@@ -78,10 +84,22 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
                 initialValue: _selectedType,
                 decoration: const InputDecoration(labelText: 'Type *'),
                 items: const [
-                  DropdownMenuItem(value: PaymentMethodType.cash, child: Text('Cash')),
-                  DropdownMenuItem(value: PaymentMethodType.bank, child: Text('Bank Account')),
-                  DropdownMenuItem(value: PaymentMethodType.mobile_money, child: Text('Mobile Money')),
-                  DropdownMenuItem(value: PaymentMethodType.other, child: Text('Other')),
+                  DropdownMenuItem(
+                    value: PaymentMethodType.cash,
+                    child: Text('Cash'),
+                  ),
+                  DropdownMenuItem(
+                    value: PaymentMethodType.bank,
+                    child: Text('Bank Account'),
+                  ),
+                  DropdownMenuItem(
+                    value: PaymentMethodType.mobile_money,
+                    child: Text('Mobile Money'),
+                  ),
+                  DropdownMenuItem(
+                    value: PaymentMethodType.other,
+                    child: Text('Other'),
+                  ),
                 ],
                 onChanged: (value) {
                   if (value != null) setState(() => _selectedType = value);
@@ -90,14 +108,18 @@ class _AddPaymentMethodScreenState extends State<AddPaymentMethodScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _balanceController,
-                decoration: const InputDecoration(labelText: 'Initial Balance *'),
+                decoration: const InputDecoration(
+                  labelText: 'Initial Balance *',
+                ),
                 keyboardType: TextInputType.number,
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _saveMethod,
-                child: _isLoading ? const CircularProgressIndicator() : const Text('Save Payment Method'),
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Save Payment Method'),
               ),
             ],
           ),

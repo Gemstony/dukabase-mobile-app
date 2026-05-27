@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/connectivity_helper.dart';
+import '../../core/widgets/transaction_form_ui.dart';
 import '../shops/providers/shop_provider.dart';
 import '../auth/providers/auth_provider.dart';
 
@@ -77,9 +78,7 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            shopProvider.error ?? 'Failed to create shop',
-          ),
+          content: Text(shopProvider.error ?? 'Failed to create shop'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -92,53 +91,79 @@ class _CreateShopScreenState extends State<CreateShopScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Create New Shop')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Shop Name *'),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(
-                  labelText: 'Address (optional)',
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          children: [
+            TransactionFormUi.sectionHeader(
+              icon: Icons.store_outlined,
+              title: 'Shop details',
+              subtitle: 'Basic information about your shop',
+            ),
+            TransactionFormUi.formCard(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Shop Name *',
+                    prefixIcon: Icons.business_outlined,
+                  ),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _addressController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Address (optional)',
+                    prefixIcon: Icons.location_on_outlined,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Phone (optional)',
+                    prefixIcon: Icons.phone_outlined,
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedCurrency,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Currency',
+                    prefixIcon: Icons.payments_outlined,
+                  ),
+                  items: _currencies
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) => setState(() {
+                    if (val != null) _selectedCurrency = val;
+                  }),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            TransactionFormUi.primaryButton(
+              onPressed: _isLoading ? null : _createShop,
+              label: 'Create Shop',
+              icon: _isLoading ? null : Icons.add_business_outlined,
+            ),
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
                 ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone (optional)',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedCurrency,
-                decoration: const InputDecoration(labelText: 'Currency'),
-                items: _currencies
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (val) => setState(() {
-                  if (val != null) _selectedCurrency = val;
-                }),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _createShop,
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Create Shop'),
-              ),
-            ],
-          ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/widgets/transaction_form_ui.dart';
 import '../providers/supplier_provider.dart';
 import '../../../core/models/shop_model.dart';
 
@@ -38,8 +39,12 @@ class _AddSupplierScreenState extends State<AddSupplierScreen> {
       shopId: widget.shop.id,
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-      address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      address: _addressController.text.trim().isEmpty
+          ? null
+          : _addressController.text.trim(),
       openingBalance: double.tryParse(_balanceController.text) ?? 0,
     );
     if (!mounted) return;
@@ -51,7 +56,10 @@ class _AddSupplierScreenState extends State<AddSupplierScreen> {
       Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Failed'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(provider.error ?? 'Failed'),
+          backgroundColor: Colors.red,
+        ),
       );
       provider.clearError();
     }
@@ -61,48 +69,93 @@ class _AddSupplierScreenState extends State<AddSupplierScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Add Supplier')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Supplier Name *'),
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          children: [
+            TransactionFormUi.sectionHeader(
+              icon: Icons.local_shipping_outlined,
+              title: 'Supplier details',
+              subtitle: 'Contact information for the supplier',
+            ),
+            TransactionFormUi.formCard(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Supplier Name *',
+                    prefixIcon: Icons.person_outlined,
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Phone Number *',
+                    prefixIcon: Icons.phone_outlined,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Email (optional)',
+                    prefixIcon: Icons.email_outlined,
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _addressController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Address (optional)',
+                    prefixIcon: Icons.location_on_outlined,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            TransactionFormUi.sectionHeader(
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Financial information',
+              subtitle: 'Opening balance for this supplier',
+            ),
+            TransactionFormUi.formCard(
+              children: [
+                TextFormField(
+                  controller: _balanceController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Opening Balance (optional)',
+                    prefixIcon: Icons.paid_outlined,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            TransactionFormUi.primaryButton(
+              onPressed: _isLoading ? null : _saveSupplier,
+              label: 'Save Supplier',
+              icon: _isLoading ? null : Icons.save_outlined,
+            ),
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number *'),
-                keyboardType: TextInputType.phone,
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email (optional)'),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Address (optional)'),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _balanceController,
-                decoration: const InputDecoration(labelText: 'Opening Balance (optional)'),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveSupplier,
-                child: _isLoading ? const CircularProgressIndicator() : const Text('Save Supplier'),
-              ),
-            ],
-          ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

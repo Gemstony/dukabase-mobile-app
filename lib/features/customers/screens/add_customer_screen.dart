@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/widgets/transaction_form_ui.dart';
 import '../providers/customer_provider.dart';
 import '../../../core/models/shop_model.dart';
 
@@ -27,7 +28,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       shopId: widget.shop.id,
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
       openingBalance: double.tryParse(_balanceController.text) ?? 0,
     );
     if (!mounted) return;
@@ -39,7 +42,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       Navigator.pop(context, message);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Failed'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(provider.error ?? 'Failed'),
+          backgroundColor: Colors.red,
+        ),
       );
       provider.clearError();
     }
@@ -49,43 +55,84 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Add Customer')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Customer Name *'),
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          children: [
+            TransactionFormUi.sectionHeader(
+              icon: Icons.person_outline,
+              title: 'Customer details',
+              subtitle: 'Contact information for the customer',
+            ),
+            TransactionFormUi.formCard(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Customer Name *',
+                    prefixIcon: Icons.person_outlined,
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Phone Number *',
+                    prefixIcon: Icons.phone_outlined,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Email (optional)',
+                    prefixIcon: Icons.email_outlined,
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            TransactionFormUi.sectionHeader(
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Financial information',
+              subtitle: 'Opening balance for this customer',
+            ),
+            TransactionFormUi.formCard(
+              children: [
+                TextFormField(
+                  controller: _balanceController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Opening Balance (optional)',
+                    prefixIcon: Icons.paid_outlined,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            TransactionFormUi.primaryButton(
+              onPressed: _isLoading ? null : _saveCustomer,
+              label: 'Save Customer',
+              icon: _isLoading ? null : Icons.save_outlined,
+            ),
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number *'),
-                keyboardType: TextInputType.phone,
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email (optional)'),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _balanceController,
-                decoration: const InputDecoration(labelText: 'Opening Balance (optional)'),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveCustomer,
-                child: _isLoading ? const CircularProgressIndicator() : const Text('Save Customer'),
-              ),
-            ],
-          ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
