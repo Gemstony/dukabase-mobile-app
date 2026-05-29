@@ -1,118 +1,107 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart'; // Add this for BuildContext
 import '../../../core/services/profile_service.dart';
 import '../../../core/models/user_model.dart';
 
 class ProfileProvider extends ChangeNotifier {
   final ProfileService _profileService = ProfileService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  UserModel? _user;
+  Map<String, dynamic>? _profile;
   bool _isLoading = false;
   String? _error;
 
-  UserModel? get user => _user;
+  // Getters
+  Map<String, dynamic>? get profile => _profile;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> loadUserProfile() async {
+  // Fix: Define _user properly
+  User? get _user => _auth.currentUser; // This is likely what you need
+  Future<void> loadProfile() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
     try {
-      final userId = _auth.currentUser?.uid;
-      print('🔍 loadUserProfile - userId: $userId');
-      if (userId == null) {
-        _error = 'Not logged in';
-        print('❌ No user logged in');
+      // Use the getter
+      if (_user == null) {
+        _error = 'User not authenticated';
+        _isLoading = false;
+        notifyListeners();
         return;
       }
-      final doc = await _firestore.collection('users').doc(userId).get();
-      print('📄 Document exists: ${doc.exists}');
-      if (!doc.exists) {
-        _error = 'User profile not found';
-        print('❌ User document missing for uid: $userId');
-        // Optionally create the document
-        final defaultUser = UserModel(
-          id: userId,
-          email: _auth.currentUser!.email!,
-          name:
-              _auth.currentUser!.displayName ??
-              _auth.currentUser!.email!.split('@')[0],
-          role: UserRole.staff,
-          createdAt: DateTime.now(),
-        );
-        await _firestore
-            .collection('users')
-            .doc(userId)
-            .set(defaultUser.toMap());
-        print('✅ Created missing user document');
-        // Reload
-        final newDoc = await _firestore.collection('users').doc(userId).get();
-        _user = UserModel.fromMap(newDoc.id, newDoc.data()!);
-        _error = null;
+
+      final profile = await _profileService.getUserProfile(_user!.uid);
+
+      if (profile != null) {
+        _profile = profile;
       } else {
-        _user = UserModel.fromMap(doc.id, doc.data()!);
-        print('✅ User loaded: ${_user!.name}');
-        _error = null;
+        _error = 'Profile not found';
       }
-    } catch (e, stack) {
-      print('❌ Error loading profile: $e');
-      print(stack);
-      _error = e.toString();
+    } catch (e) {
+      _error = 'Unable to load profile';
+      debugPrint('Profile loading error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<bool> updateName(String newName) async {
+  // Add this method for password change
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     _isLoading = true;
-    notifyListeners();
-    final success = await _profileService.updateName(newName);
-    if (success) {
-      _user = _user?.copyWith(name: newName);
-    } else {
-      _error = 'Failed to update name';
-    }
-    _isLoading = false;
-    notifyListeners();
-    return success;
-  }
-
-  Future<bool> updatePhone(String newPhone) async {
-    _isLoading = true;
-    notifyListeners();
-    final success = await _profileService.updatePhone(newPhone);
-    if (success) {
-      _user = _user?.copyWith(phone: newPhone);
-    } else {
-      _error = 'Failed to update phone';
-    }
-    _isLoading = false;
-    notifyListeners();
-    return success;
-  }
-
-  Future<({bool success, String? error})> changePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) async {
-    _isLoading = true;
-    notifyListeners();
-    final result = await _profileService.changePassword(
-      currentPassword: currentPassword,
-      newPassword: newPassword,
-    );
-    _isLoading = false;
-    notifyListeners();
-    return result;
-  }
-
-  void clearError() {
     _error = null;
     notifyListeners();
+
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      // Re-authenticate user before changing password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+
+      _error = null;
+    } catch (e) {
+      _error = 'Failed to change password: ${e.toString()}';
+      debugPrint('Password change error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Add this method that updateUserProfile refers to
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      if (_user == null) throw Exception('User not authenticated');
+
+      // Call the profile service method
+      await _profileService.updateUserProfile(_user!.uid, data);
+
+      // Update local profile data
+      _profile = {...?profile, ...data};
+      _error = null;
+      debugPrint('Profile updated successfully');
+    } catch (e) {
+      _error = 'Failed to update profile: ${e.toString()}';
+      debugPrint('Profile update error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
