@@ -1,3 +1,4 @@
+import 'package:dukabase/core/models/stock_adjustment_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/stock_adjustment_provider.dart';
@@ -59,13 +60,14 @@ class _StockAdjustmentListScreenState extends State<StockAdjustmentListScreen> {
                       ),
                     ],
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
+                   child: Material(
+                     color: Colors.transparent,
+                     child: InkWell(
+                       borderRadius: BorderRadius.circular(16),
+                       onTap: () => _showAdjustmentDetailDialog(context, adj),
+                       child: Padding(
+                         padding: const EdgeInsets.all(16),
+                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(12),
@@ -97,7 +99,7 @@ class _StockAdjustmentListScreenState extends State<StockAdjustmentListScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Product ID: ${adj.batchId.substring(0, 6)}...',
+                                    'Product: ${provider.productNames[adj.productId] ?? adj.productId.substring(0, 6)}...',
                                     style: TextStyle(
                                       color: Colors.grey[600],
                                       fontSize: 13,
@@ -177,22 +179,67 @@ class _StockAdjustmentListScreenState extends State<StockAdjustmentListScreen> {
     );
   }
 
-  Future<void> _openCreateAdjustment() async {
-    final message = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CreateStockAdjustmentScreen(shop: widget.shop),
-      ),
-    );
-    if (!mounted || message == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+   Future<void> _openCreateAdjustment() async {
+     final message = await Navigator.push<String>(
+       context,
+       MaterialPageRoute(
+         builder: (_) => CreateStockAdjustmentScreen(shop: widget.shop),
+       ),
+     );
+     if (!mounted || message == null) return;
+     ScaffoldMessenger.of(context).showSnackBar(
+       SnackBar(
+         content: Text(message),
+         backgroundColor: Colors.green,
+         behavior: SnackBarBehavior.floating,
+       ),
+     );
+   }
+
+   Future<void> _showAdjustmentDetailDialog(BuildContext context, StockAdjustmentModel adjustment) async {
+     final provider = Provider.of<StockAdjustmentProvider>(context, listen: false);
+     final creatorName = provider.creatorNames[adjustment.createdBy] ?? adjustment.createdBy;
+     final productName = provider.productNames[adjustment.productId] ?? adjustment.productId.substring(0, 6) + '...';
+
+     await showDialog(
+       context: context,
+       builder: (context) => AlertDialog(
+         title: Text('Stock Adjustment Details'),
+         content: SingleChildScrollView(
+           child: Column(
+             crossAxisAlignment: CrossAxisAlignment.start,
+             mainAxisSize: MainAxisSize.min,
+             children: [
+               Text('ID: ${adjustment.id}',
+                   style: const TextStyle(fontWeight: FontWeight.bold)),
+               const SizedBox(height: 8),
+               Text('Reason: ${adjustment.reason.toUpperCase()}'),
+               const SizedBox(height: 4),
+               Text('Product: $productName'),
+               const SizedBox(height: 4),
+               Text('Batch ID: ${adjustment.batchId}'),
+               const SizedBox(height: 4),
+               Text('Quantity Change: ${adjustment.quantityChange > 0 ? '+' : ''}${adjustment.quantityChange.toStringAsFixed(2)}'),
+               const SizedBox(height: 4),
+               if (adjustment.note != null && adjustment.note!.isNotEmpty)
+                 Text('Note: ${adjustment.note}'),
+               const SizedBox(height: 8),
+               Text('Created By: $creatorName'),
+               const SizedBox(height: 4),
+               Text('Date: ${adjustment.createdAt.toLocal().toString().split(' ')[0]}'),
+               Text('Time: ${adjustment.createdAt.toLocal().toString().split(' ')[1].substring(0, 5)}'),
+             ],
+           ),
+         ),
+         actions: [
+           TextButton(
+             onPressed: () => Navigator.pop(context),
+             child: const Text('Close'),
+           ),
+         ],
+       ),
+     );
+   }
 
   Widget _buildEmptyState() {
     return Center(
