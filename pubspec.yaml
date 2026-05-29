@@ -58,6 +58,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.5
 
+  # QR Code generation
+  qr_flutter: ^4.1.0
+    # Printing support
+  printing: ^5.13.4
+  # PDF generation (used directly for label printing)
+  pdf: ^3.12.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -110,3 +117,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+

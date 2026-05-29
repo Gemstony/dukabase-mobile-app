@@ -9,6 +9,7 @@ import '../../../core/models/product_model.dart';
 import '../../../core/models/batch_model.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/qr_code_helper.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final ShopModel shop;
@@ -24,7 +25,8 @@ class ProductDetailsScreen extends StatefulWidget {
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
-class _ProductDetailsScreenState extends State<ProductDetailsScreen> with SingleTickerProviderStateMixin {
+class _ProductDetailsScreenState extends State<ProductDetailsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ProductService _productService = ProductService();
   late ProductModel _currentProduct;
@@ -47,7 +49,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(_currentProduct.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          _currentProduct.name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         elevation: 0,
         actions: [
@@ -76,10 +81,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildOverviewTab(),
-          _buildActivityTab(),
-        ],
+        children: [_buildOverviewTab(), _buildActivityTab()],
       ),
     );
   }
@@ -92,7 +94,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
         children: [
           _buildSummaryCard(),
           const SizedBox(height: 24),
-          const Text('Inventory Batches', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            'Inventory Batches',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 12),
           _buildBatchesList(),
         ],
@@ -101,13 +106,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
   }
 
   Widget _buildSummaryCard() {
-    final isLowStock = _currentProduct.currentStock <= _currentProduct.lowStockAlert;
-    
+    final isLowStock =
+        _currentProduct.currentStock <= _currentProduct.lowStockAlert;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.8)],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withOpacity(0.8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -128,17 +137,30 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
             children: [
               Text(
                 'SKU: ${_currentProduct.sku}',
-                style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: isLowStock ? Colors.redAccent : Colors.greenAccent.withOpacity(0.9),
+                  color: isLowStock
+                      ? Colors.redAccent
+                      : Colors.greenAccent.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   isLowStock ? 'LOW STOCK' : 'IN STOCK',
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -146,7 +168,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
           const SizedBox(height: 20),
           Text(
             '${_currentProduct.currentStock} ${_currentProduct.unit}',
-            style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const Text(
             'Total Available Stock',
@@ -166,7 +192,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
               Expanded(
                 child: _buildMiniStat(
                   'Default Price',
-                  CurrencyFormatter.format(_currentProduct.defaultSellingPrice, widget.shop.currency ?? "TZS"),
+                  CurrencyFormatter.format(
+                    _currentProduct.defaultSellingPrice,
+                    widget.shop.currency ?? "TZS",
+                  ),
                   Icons.sell_outlined,
                 ),
               ),
@@ -186,8 +215,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ],
@@ -212,9 +251,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
           itemCount: batches.length,
           itemBuilder: (context, index) {
             final batch = batches[index];
+            final qrData = QRCodeHelper.encodeBatchData(
+              shopId: widget.shop.id,
+              productId: _currentProduct.id,
+              batchCode: batch.batchCode,
+            );
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -226,43 +269,117 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.inventory_2, color: Colors.deepPurple),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  // Batch info row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
                       children: [
-                        Text('Batch: ${batch.batchCode}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                        const SizedBox(height: 4),
-                        Row(
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.inventory_2,
+                            color: Colors.deepPurple,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Batch: ${batch.batchCode}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Qty: ${batch.quantity}',
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Expiry: ${batch.expiryDate != null ? DateFormat('MMM d, y').format(batch.expiryDate!) : 'N/A'}',
+                                    style: TextStyle(
+                                      color: Colors.red[400],
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('Qty: ${batch.quantity}', style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-                            const SizedBox(width: 12),
                             Text(
-                              'Expiry: ${batch.expiryDate != null ? DateFormat('MMM d, y').format(batch.expiryDate!) : 'N/A'}',
-                              style: TextStyle(color: Colors.red[400], fontSize: 13),
+                              'Cost: ${CurrencyFormatter.format(batch.costPrice, widget.shop.currency ?? "TZS")}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Sell: ${CurrencyFormatter.format(batch.sellingPrice, widget.shop.currency ?? "TZS")}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('Cost: ${CurrencyFormatter.format(batch.costPrice, widget.shop.currency ?? "TZS")}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                      const SizedBox(height: 4),
-                      Text('Sell: ${CurrencyFormatter.format(batch.sellingPrice, widget.shop.currency ?? "TZS")}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    ],
+                  // QR Code & Print actions row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (batch.quantity > 0)
+                          TextButton.icon(
+                            icon: const Icon(Icons.qr_code, size: 18),
+                            label: const Text('Show QR'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.deepPurple,
+                              textStyle: const TextStyle(fontSize: 13),
+                            ),
+                            onPressed: () => _showBatchQrCode(
+                              context,
+                              batch: batch,
+                              qrData: qrData,
+                            ),
+                          ),
+                        const SizedBox(width: 8),
+                        TextButton.icon(
+                          icon: const Icon(Icons.print, size: 18),
+                          label: const Text('Print Label'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.blueGrey,
+                            textStyle: const TextStyle(fontSize: 13),
+                          ),
+                          onPressed: () =>
+                              _printBatchLabel(batch: batch, qrData: qrData),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -298,12 +415,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Padding(
             padding: const EdgeInsets.all(24.0),
-            child: _buildEmptyContainer('No recent sales or purchases recorded.'),
+            child: _buildEmptyContainer(
+              'No recent sales or purchases recorded.',
+            ),
           );
         }
 
         final docs = snapshot.data!.docs;
-        
+
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: docs.length,
@@ -313,20 +432,29 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
             final isSale = data.containsKey('sellingPrice');
             final price = isSale ? data['sellingPrice'] : data['costPrice'];
             final qty = data['quantity'];
-            
+
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isSale ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3)),
+                border: Border.all(
+                  color: isSale
+                      ? Colors.green.withOpacity(0.3)
+                      : Colors.orange.withOpacity(0.3),
+                ),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: isSale ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-                    child: Icon(isSale ? Icons.arrow_upward : Icons.arrow_downward, color: isSale ? Colors.green : Colors.orange),
+                    backgroundColor: isSale
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.orange.withOpacity(0.1),
+                    child: Icon(
+                      isSale ? Icons.arrow_upward : Icons.arrow_downward,
+                      color: isSale ? Colors.green : Colors.orange,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -335,12 +463,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                       children: [
                         Text(
                           isSale ? 'Item Sold' : 'Item Purchased',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Batch: ${data['batchId'] ?? 'Unknown'}',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -385,23 +519,150 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
         children: [
           Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          Text(message, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[600]),
+          ),
         ],
       ),
     );
+  }
+
+  /// Shows a bottom sheet with the batch QR code for viewing/scannning.
+  void _showBatchQrCode(BuildContext context, {
+    required BatchModel batch,
+    required String qrData,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _currentProduct.name,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Batch: ${batch.batchCode}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
+              // QR Code
+              Center(
+                child: QRCodeHelper.generateQrWidget(
+                  data: qrData,
+                  size: 220,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'SKU: ${_currentProduct.sku}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Price: ${CurrencyFormatter.format(batch.sellingPrice, widget.shop.currency ?? "TZS")}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6C63FF),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Print button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.print),
+                  label: const Text('Print Label'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _printBatchLabel(batch: batch, qrData: qrData);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Prints a QR label for the given batch.
+  Future<void> _printBatchLabel({
+    required BatchModel batch,
+    required String qrData,
+  }) async {
+    try {
+      await QRCodeHelper.printBatchQrLabel(
+        productName: _currentProduct.name,
+        batchCode: batch.batchCode,
+        sku: _currentProduct.sku,
+        sellingPrice: batch.sellingPrice,
+        currency: widget.shop.currency ?? 'TZS',
+        qrData: qrData,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Print error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showEditProductModal(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: _currentProduct.name);
     final unitController = TextEditingController(text: _currentProduct.unit);
-    final priceController = TextEditingController(text: _currentProduct.defaultSellingPrice.toString());
-    final alertController = TextEditingController(text: _currentProduct.lowStockAlert.toString());
+    final priceController = TextEditingController(
+      text: _currentProduct.defaultSellingPrice.toString(),
+    );
+    final alertController = TextEditingController(
+      text: _currentProduct.lowStockAlert.toString(),
+    );
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) {
         return Padding(
           padding: EdgeInsets.only(
@@ -417,57 +678,80 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Edit Product', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Edit Product',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Product Name'),
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Product Name',
+                    ),
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: unitController,
-                    decoration: const InputDecoration(labelText: 'Unit (e.g., pcs, kg)'),
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Unit (e.g., pcs, kg)',
+                    ),
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: priceController,
-                    decoration: const InputDecoration(labelText: 'Default Selling Price'),
+                    decoration: const InputDecoration(
+                      labelText: 'Default Selling Price',
+                    ),
                     keyboardType: TextInputType.number,
-                    validator: (v) => double.tryParse(v ?? '') == null ? 'Invalid price' : null,
+                    validator: (v) => double.tryParse(v ?? '') == null
+                        ? 'Invalid price'
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: alertController,
-                    decoration: const InputDecoration(labelText: 'Low Stock Alert Quantity'),
+                    decoration: const InputDecoration(
+                      labelText: 'Low Stock Alert Quantity',
+                    ),
                     keyboardType: TextInputType.number,
-                    validator: (v) => double.tryParse(v ?? '') == null ? 'Invalid quantity' : null,
+                    validator: (v) => double.tryParse(v ?? '') == null
+                        ? 'Invalid quantity'
+                        : null,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
                         Navigator.pop(ctx);
-                        
+
                         // Show loading indicator
                         showDialog(
                           context: context,
                           barrierDismissible: false,
-                          builder: (c) => const Center(child: CircularProgressIndicator()),
+                          builder: (c) =>
+                              const Center(child: CircularProgressIndicator()),
                         );
-                        
+
                         // Wait for provider to perform update
                         // ignore: use_build_context_synchronously
-                        final productProvider = Provider.of<ProductProvider>(context, listen: false);
-                        
+                        final productProvider = Provider.of<ProductProvider>(
+                          context,
+                          listen: false,
+                        );
+
                         final price = double.parse(priceController.text);
                         final alert = double.parse(alertController.text);
-                        
+
                         final result = await productProvider.updateProduct(
                           shopId: widget.shop.id,
                           productId: _currentProduct.id,
@@ -476,10 +760,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                           defaultSellingPrice: price,
                           lowStockAlert: alert,
                         );
-                        
+
                         // ignore: use_build_context_synchronously
                         Navigator.pop(context); // close loading
-                        
+
                         if (result.success) {
                           setState(() {
                             // Rebuild UI with local modifications
@@ -501,12 +785,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                               : 'Product updated successfully';
                           // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(message), backgroundColor: Colors.green),
+                            SnackBar(
+                              content: Text(message),
+                              backgroundColor: Colors.green,
+                            ),
                           );
                         } else {
                           // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(productProvider.error ?? 'Update failed'), backgroundColor: Colors.red),
+                            SnackBar(
+                              content: Text(
+                                productProvider.error ?? 'Update failed',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                         }
                       }
@@ -545,11 +837,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (c) => const Center(child: CircularProgressIndicator()),
+                builder: (c) =>
+                    const Center(child: CircularProgressIndicator()),
               );
 
-              final productProvider =
-                  Provider.of<ProductProvider>(context, listen: false);
+              final productProvider = Provider.of<ProductProvider>(
+                context,
+                listen: false,
+              );
               final result = await productProvider.deleteProduct(
                 widget.shop.id,
                 _currentProduct.id,
