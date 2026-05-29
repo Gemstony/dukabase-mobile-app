@@ -164,10 +164,25 @@ class _IncomeReportScreenState extends State<IncomeReportScreen> {
         child: Column(
           children: [
             _incomeRow(
-              'Total Revenue',
+              'Sales Revenue',
               summary.totalRevenue,
               Colors.green,
               icon: Icons.trending_up,
+            ),
+            Divider(color: Colors.grey.shade100, height: 24),
+            _incomeRow(
+              'Customer Repayments',
+              summary.customerRepayments,
+              Colors.teal,
+              icon: Icons.payment,
+            ),
+            Divider(color: Colors.grey.shade100, height: 24),
+            _incomeRow(
+              'Total Revenue',
+              summary.totalRevenue + summary.customerRepayments,
+              Colors.green,
+              isBold: true,
+              icon: Icons.account_balance,
             ),
             Divider(color: Colors.grey.shade100, height: 24),
             _incomeRow(

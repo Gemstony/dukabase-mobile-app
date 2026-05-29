@@ -3,6 +3,7 @@ class DashboardData {
   final double todayExpenses;
   final double
   todayProfit; // todaySales - todayExpenses (simplified; COGS later)
+  final double todayRepayments; // customer payments received today
   final int totalProducts;
   final int lowStockProducts;
   final int activeSuppliers;
@@ -16,6 +17,7 @@ class DashboardData {
     required this.todaySales,
     required this.todayExpenses,
     required this.todayProfit,
+    required this.todayRepayments,
     required this.totalProducts,
     required this.lowStockProducts,
     required this.activeSuppliers,

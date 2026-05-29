@@ -8,6 +8,7 @@ import '../../sales/screens/sales_list_screen.dart';
 import '../../purchases/screens/purchases_list_screen.dart';
 import '../../expenses/screens/expense_list_screen.dart';
 import '../../products/screens/product_list_screen.dart';
+import '../../customers/screens/customer_repayments_screen.dart';
 
 class StaffDashboardScreen extends StatefulWidget {
   final ShopModel shop;
@@ -104,6 +105,17 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 data.todayExpenses,
                 Icons.receipt,
                 Colors.redAccent,
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: Colors.white.withOpacity(0.3),
+              ),
+              _statItem(
+                'Repayments',
+                data.todayRepayments,
+                Icons.payment,
+                Colors.lightGreenAccent,
               ),
             ],
           ),
@@ -211,6 +223,19 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => ProductListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
+            _actionButton(
+              'Customer Repayments',
+              Icons.payment,
+              Colors.green.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomerRepaymentsScreen(shop: widget.shop),
                   ),
                 );
               },

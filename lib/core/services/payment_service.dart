@@ -73,4 +73,58 @@ class PaymentService {
             .map((doc) => PaymentModel.fromMap(doc.id, doc.data()))
             .toList());
   }
+
+  /// Stream of all payments across all customers in a shop, with customer names
+  Stream<List<({PaymentModel payment, String customerName})>> getAllPayments(String shopId) {
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('customers')
+        .snapshots()
+        .asyncMap((customerSnapshot) async {
+          final result = <({PaymentModel payment, String customerName})>[];
+          for (final customerDoc in customerSnapshot.docs) {
+            final customerName = customerDoc.data()['name'] as String? ?? 'Unknown';
+            final paymentsSnapshot = await customerDoc.reference
+                .collection('payments')
+                .orderBy('createdAt', descending: true)
+                .get();
+            for (final paymentDoc in paymentsSnapshot.docs) {
+              final payment = PaymentModel.fromMap(paymentDoc.id, paymentDoc.data());
+              result.add((payment: payment, customerName: customerName));
+            }
+          }
+          // Sort all payments by createdAt descending
+          result.sort((a, b) => b.payment.createdAt.compareTo(a.payment.createdAt));
+          return result;
+        });
+  }
+
+  /// Get total payments amount for a shop within a date range
+  Future<double> getTotalPaymentsInRange(String shopId, DateTime start, DateTime end) async {
+    double total = 0;
+    final customersSnapshot = await _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('customers')
+        .get();
+    for (final customerDoc in customersSnapshot.docs) {
+      final paymentsSnapshot = await customerDoc.reference
+          .collection('payments')
+          .where('createdAt', isGreaterThanOrEqualTo: start)
+          .where('createdAt', isLessThanOrEqualTo: end)
+          .get();
+      for (final paymentDoc in paymentsSnapshot.docs) {
+        total += (paymentDoc.data()['amount'] as num).toDouble();
+      }
+    }
+    return total;
+  }
+
+  /// Get today's total repayments amount
+  Future<double> getTodayRepayments(String shopId) async {
+    final start = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final end = start.add(const Duration(days: 1));
+    return getTotalPaymentsInRange(shopId, start, end);
+  }
 }

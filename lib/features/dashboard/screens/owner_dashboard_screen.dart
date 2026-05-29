@@ -7,6 +7,7 @@ import '../../sales/screens/new_sale_screen.dart';
 import '../../sales/screens/sales_list_screen.dart';
 import '../../purchases/screens/purchases_list_screen.dart';
 import '../../expenses/screens/expense_list_screen.dart';
+import '../../customers/screens/customer_repayments_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   final ShopModel shop;
@@ -96,10 +97,16 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
           const [Color(0xFFF2C94C), Color(0xFFF2994A)],
         ),
         _kpiCard(
+          'Today Repayments',
+          data.todayRepayments,
+          Icons.payment,
+          const [Color(0xFF1D976C), Color(0xFF93F9B9)],
+        ),
+        _kpiCard(
           'Active Suppliers',
           data.activeSuppliers.toDouble(),
           Icons.local_shipping,
-          const [Color(0xFF1D976C), Color(0xFF93F9B9)],
+          const [Color(0xFFa8c0ff), Color(0xFF3f2b96)],
         ),
       ],
     );
@@ -228,6 +235,19 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => ExpenseListScreen(shop: widget.shop),
+                  ),
+                );
+              },
+            ),
+            _actionButton(
+              'Customer Repayments',
+              Icons.payment,
+              Colors.green.shade600,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomerRepaymentsScreen(shop: widget.shop),
                   ),
                 );
               },

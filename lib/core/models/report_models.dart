@@ -47,6 +47,7 @@ class IncomeSummary {
   final double totalRevenue;
   final double totalCogs;
   final double totalExpenses;
+  final double customerRepayments;
   final double grossProfit;
   final double netProfit;
 
@@ -54,6 +55,7 @@ class IncomeSummary {
     required this.totalRevenue,
     required this.totalCogs,
     required this.totalExpenses,
+    required this.customerRepayments,
     required this.grossProfit,
     required this.netProfit,
   });

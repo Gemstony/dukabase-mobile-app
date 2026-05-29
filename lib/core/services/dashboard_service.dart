@@ -9,18 +9,27 @@ class DashboardService {
 
   /// Get aggregated dashboard data for a shop (real‑time stream)
   Stream<DashboardData> getDashboardData(String shopId) {
-    return Rx.combineLatest5(
+    return Rx.combineLatest6(
       _getTodaySales(shopId),
       _getTodayExpenses(shopId),
+      _getTodayRepayments(shopId),
       _getProductsLowStock(shopId),
       _getAllProducts(shopId),
       _getSuppliers(shopId),
-      (todaySales, todayExpenses, lowStockItems, allProducts, suppliers) {
+      (
+        todaySales,
+        todayExpenses,
+        todayRepayments,
+        lowStockItems,
+        allProducts,
+        suppliers,
+      ) {
         // Additional data that can be fetched separately
         return DashboardData(
           todaySales: todaySales,
           todayExpenses: todayExpenses,
           todayProfit: todaySales - todayExpenses,
+          todayRepayments: todayRepayments,
           totalProducts: allProducts.length,
           lowStockProducts: lowStockItems.length,
           activeSuppliers: suppliers.length,
@@ -75,6 +84,35 @@ class DashboardService {
             (sum, doc) => sum + (doc.data()['amount'] as num).toDouble(),
           ),
         );
+  }
+
+  Stream<double> _getTodayRepayments(String shopId) {
+    final start = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    final end = start.add(const Duration(days: 1));
+    // Use a periodic stream since getAllPayments is async
+    return _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('customers')
+        .snapshots()
+        .asyncMap((customerSnapshot) async {
+          double total = 0;
+          for (final customerDoc in customerSnapshot.docs) {
+            final paymentsSnapshot = await customerDoc.reference
+                .collection('payments')
+                .where('createdAt', isGreaterThanOrEqualTo: start)
+                .where('createdAt', isLessThan: end)
+                .get();
+            for (final paymentDoc in paymentsSnapshot.docs) {
+              total += (paymentDoc.data()['amount'] as num).toDouble();
+            }
+          }
+          return total;
+        });
   }
 
   Stream<List<LowStockProduct>> _getProductsLowStock(String shopId) {

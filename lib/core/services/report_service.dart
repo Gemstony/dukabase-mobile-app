@@ -365,7 +365,6 @@ class ReportService {
         );
   }
 
-  // ---------- INCOME REPORT (Simplified) ----------
   // ---------- INCOME REPORT ----------
   Future<IncomeSummary> getIncomeSummary(
     String shopId,
@@ -398,14 +397,8 @@ class ReportService {
       totalExpenses += (doc.data()['amount'] as num).toDouble();
     }
 
-    // 3. COGS (Cost of Goods Sold) – optional, can be heavy.
-    // For simplicity, we'll compute from purchase items sold within the period.
-    // Alternative: skip COGS or compute from sale items' batch costs.
+    // 3. COGS (Cost of Goods Sold)
     double totalCogs = 0;
-    // Fetch all sale items and sum costPrice * quantity (if you stored costPrice in sale items)
-    // This is a heavier operation; you may decide to skip or implement later.
-    // We'll provide a placeholder that returns 0, but you can uncomment the following logic.
-
     for (var saleDoc in salesSnapshot.docs) {
       final itemsSnapshot = await saleDoc.reference.collection('items').get();
       for (var itemDoc in itemsSnapshot.docs) {
@@ -413,7 +406,6 @@ class ReportService {
         final batchId = data['batchId'];
         final productId = data['productId'];
         final quantity = (data['quantity'] as num).toDouble();
-        // Fetch batch cost price
         final batchDoc = await _firestore
             .collection('shops')
             .doc(shopId)
@@ -430,13 +422,33 @@ class ReportService {
       }
     }
 
-    final grossProfit = totalRevenue - totalCogs;
+    // 4. Customer Repayments (payments received within date range)
+    double customerRepayments = 0;
+    final customersSnapshot = await _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('customers')
+        .get();
+    for (final customerDoc in customersSnapshot.docs) {
+      final paymentsSnapshot = await customerDoc.reference
+          .collection('payments')
+          .where('createdAt', isGreaterThanOrEqualTo: start)
+          .where('createdAt', isLessThanOrEqualTo: end)
+          .get();
+      for (final paymentDoc in paymentsSnapshot.docs) {
+        customerRepayments += (paymentDoc.data()['amount'] as num).toDouble();
+      }
+    }
+
+    final totalIncome = totalRevenue + customerRepayments;
+    final grossProfit = totalIncome - totalCogs;
     final netProfit = grossProfit - totalExpenses;
 
     return IncomeSummary(
       totalRevenue: totalRevenue,
       totalCogs: totalCogs,
       totalExpenses: totalExpenses,
+      customerRepayments: customerRepayments,
       grossProfit: grossProfit,
       netProfit: netProfit,
     );
