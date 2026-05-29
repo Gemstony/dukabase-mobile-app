@@ -22,9 +22,9 @@ import '../../core/models/user_model.dart';
 import '../auth/providers/auth_provider.dart';
 import 'create_shop_screen.dart';
 import 'shop_detail_screen.dart';
-import '../products/screens/product_list_screen.dart'; 
-import '../suppliers/screens/supplier_list_screen.dart'; 
-import '../purchases/screens/purchase_screen.dart'; 
+import '../products/screens/product_list_screen.dart';
+import '../suppliers/screens/supplier_list_screen.dart';
+import '../purchases/screens/purchase_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,7 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentUser = authProvider.currentUser;
 
     // Auto-redirect logic
-    if (!_hasCheckedAutoRedirect && shopProvider.currentShop != null && currentUser != null) {
+    if (!_hasCheckedAutoRedirect &&
+        shopProvider.currentShop != null &&
+        currentUser != null) {
       _hasCheckedAutoRedirect = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (currentUser.role == UserRole.owner) {
@@ -75,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'DukaBase',
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
         ),
-        centerTitle: true, 
+        centerTitle: true,
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
@@ -87,7 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
             DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)],
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.7),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -100,14 +105,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     radius: 30,
                     backgroundColor: Colors.white,
                     child: Text(
-                      currentUser?.name.isNotEmpty == true ? currentUser!.name[0].toUpperCase() : 'U',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                      currentUser?.name.isNotEmpty == true
+                          ? currentUser!.name[0].toUpperCase()
+                          : 'U',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     currentUser?.name ?? 'User',
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -306,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _navigateToBackup(context, shopProvider.currentShop);
                 },
               ),
-              ListTile(
+            ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Profile'),
               onTap: () {
@@ -321,12 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
-              onTap: () async {
-                await authProvider.logout();
-                if (context.mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              },
+              onTap: () => _showLogoutConfirmation(context, authProvider),
             ),
           ],
         ),
@@ -353,6 +363,46 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             )
           : null,
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              Navigator.pop(context); // close drawer
+              await authProvider.logout();
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -594,7 +644,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Theme.of(context).primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.storefront, size: 80, color: Theme.of(context).primaryColor),
+              child: Icon(
+                Icons.storefront,
+                size: 80,
+                color: Theme.of(context).primaryColor,
+              ),
             ),
             const SizedBox(height: 24),
             Text(
@@ -617,9 +671,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.add_business),
                 label: const Text('Create Your First Shop'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 onPressed: () {
                   Navigator.push(
@@ -654,7 +716,11 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.only(bottom: 16),
               child: Text(
                 'Available Shops',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
               ),
             );
           }
@@ -729,12 +795,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              Icon(Icons.location_on, size: 14, color: Colors.grey[600]),
+                              Icon(
+                                Icons.location_on,
+                                size: 14,
+                                color: Colors.grey[600],
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   shop.address ?? 'No address provided',
-                                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 13,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -751,7 +824,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.grey[100],
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                      child: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),
@@ -763,12 +840,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildActiveShopCard(BuildContext context, ShopModel shop, UserModel currentUser) {
+  Widget _buildActiveShopCard(
+    BuildContext context,
+    ShopModel shop,
+    UserModel currentUser,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.8)],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withOpacity(0.8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -802,11 +886,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.white24,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.store,
-                    size: 32,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.store, size: 32, color: Colors.white),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -815,7 +895,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const Text(
                         'Active Shop',
-                        style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -831,7 +915,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -847,7 +934,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(Icons.arrow_forward, size: 14, color: Theme.of(context).primaryColor),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 14,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ],
                   ),
                 ),

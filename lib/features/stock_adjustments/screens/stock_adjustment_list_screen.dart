@@ -199,7 +199,7 @@ class _StockAdjustmentListScreenState extends State<StockAdjustmentListScreen> {
    Future<void> _showAdjustmentDetailDialog(BuildContext context, StockAdjustmentModel adjustment) async {
      final provider = Provider.of<StockAdjustmentProvider>(context, listen: false);
      final creatorName = provider.creatorNames[adjustment.createdBy] ?? adjustment.createdBy;
-     final productName = provider.productNames[adjustment.productId] ?? adjustment.productId.substring(0, 6) + '...';
+     final productName = provider.productNames[adjustment.productId] ?? '${adjustment.productId.substring(0, 6)}...';
 
      await showDialog(
        context: context,

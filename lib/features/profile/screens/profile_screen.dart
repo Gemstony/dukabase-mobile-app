@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 import 'edit_profile_screen.dart';
 import 'change_password_screen.dart';
@@ -29,9 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
 
@@ -87,10 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               provider.error!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -172,10 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
-                      icon: const Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                      ),
+                      icon: const Icon(Icons.edit, color: Colors.white),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -273,11 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : Border(
-                bottom: BorderSide(
-                  color: AppColors.border,
-                ),
-              ),
+            : Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -408,10 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                color: AppColors.textHint,
-              ),
+              Icon(Icons.chevron_right, color: AppColors.textHint),
             ],
           ),
         ),
@@ -422,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showLogoutDialog() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (ctx) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -431,16 +417,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           content: const Text('Are you sure you want to sign out?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(ctx),
               child: Text(
                 'Cancel',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                // Add your logout logic here
-                Navigator.pop(context);
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final authProvider = Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                );
+                await authProvider.logout();
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
