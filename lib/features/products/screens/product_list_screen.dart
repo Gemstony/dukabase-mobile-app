@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../../../core/models/shop_model.dart';
 import '../../../core/models/product_model.dart';
+import '../../../core/models/batch_model.dart';
+import '../../../core/services/product_service.dart';
 import 'add_product_screen.dart';
 import 'product_details_screen.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/qr_code_helper.dart';
 
 class ProductListScreen extends StatefulWidget {
   final ShopModel shop;
@@ -16,6 +19,9 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
+  final ProductService _productService = ProductService();
+  bool _isPrinting = false;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +36,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
       appBar: AppBar(
         title: Text('Products', style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
+        actions: [
+          if (productProvider.products.isNotEmpty)
+            IconButton(
+              icon: _isPrinting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.print),
+              tooltip: 'Print All Batch QR Codes',
+              onPressed: _isPrinting ? null : () => _printAllQrCodes(),
+            ),
+        ],
       ),
       body: productProvider.isLoading && productProvider.products.isEmpty
           ? const Center(child: CircularProgressIndicator())
@@ -41,7 +61,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   itemBuilder: (context, index) {
                     final product = productProvider.products[index];
                     final isLowStock = product.currentStock <= product.lowStockAlert;
-                    
+
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
@@ -138,6 +158,62 @@ class _ProductListScreenState extends State<ProductListScreen> {
         onPressed: _openAddProduct,
       ),
     );
+  }
+
+  /// Fetches all products and their batches, then prints a grid of QR codes.
+  Future<void> _printAllQrCodes() async {
+    setState(() => _isPrinting = true);
+
+    try {
+      final productProvider =
+          Provider.of<ProductProvider>(context, listen: false);
+      final products = productProvider.products.toList();
+
+      // Fetch batches for each product that has stock
+      final List<({
+        ProductModel product,
+        List<BatchModel> batches,
+      })> productBatches = [];
+
+      for (final product in products) {
+        final batches = await _productService.getActiveBatches(
+          widget.shop.id,
+          product.id,
+        );
+        if (batches.isNotEmpty) {
+          productBatches.add((product: product, batches: batches));
+        }
+      }
+
+      if (productBatches.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No active batches found to print.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      await QRCodeHelper.printAllBatchQrCodes(
+        shopId: widget.shop.id,
+        currency: widget.shop.currency,
+        productBatches: productBatches,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Print error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPrinting = false);
+    }
   }
 
   Future<void> _openProductDetail(ProductModel product) async {
