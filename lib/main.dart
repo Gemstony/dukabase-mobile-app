@@ -70,6 +70,7 @@ class DukaBaseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'DukaBase',
         theme: ThemeData(
           primarySwatch: Colors.deepPurple,
