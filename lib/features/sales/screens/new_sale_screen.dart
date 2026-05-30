@@ -1,5 +1,6 @@
 import 'package:dukabase/core/utils/connectivity_helper.dart';
 import 'package:dukabase/core/utils/currency_formatter.dart';
+import 'package:dukabase/core/utils/qr_code_helper.dart';
 import 'package:dukabase/core/widgets/transaction_form_ui.dart';
 import 'package:dukabase/features/payment_methods/providers/payment_method_provider.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import '../../../core/models/shop_model.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/batch_model.dart';
 import 'sales_list_screen.dart';
+import 'barcode_scanner_screen.dart';
 
 class NewSaleScreen extends StatefulWidget {
   final ShopModel shop;
@@ -28,6 +30,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   final List<CartItem> _cart = [];
   String? _selectedCustomerId;
   final TextEditingController _paidController = TextEditingController();
+  bool _isProcessingScan = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -40,7 +44,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       context,
       listen: false,
     ).loadProducts(widget.shop.id);
-
     Provider.of<PaymentMethodProvider>(
       context,
       listen: false,
@@ -49,7 +52,130 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   double get _totalAmount => _cart.fold(0, (sum, item) => sum + item.subtotal);
 
-  Future<void> _addProduct() async {
+  // ─────────────────────────────────────────────────────────────
+  // SCAN QR CODE → ADD TO CART
+  // ─────────────────────────────────────────────────────────────
+
+  /// Opens the barcode scanner, decodes the QR data, finds the matching
+  /// product + batch, and adds it to the cart with quantity 1.
+  Future<void> _addFromScan() async {
+    if (_isProcessingScan) return;
+    setState(() => _isProcessingScan = true);
+
+    try {
+      // 1. Open scanner
+      final scannedValue = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+      );
+
+      if (scannedValue == null || scannedValue.isEmpty) return;
+
+      // 2. Decode QR data (format: "shopId|productId|batchCode")
+      final decoded = QRCodeHelper.decodeBatchData(scannedValue);
+      if (decoded == null) {
+        _showSnackBar(
+          'Invalid QR code format. Expected a valid batch QR code.',
+        );
+        return;
+      }
+
+      // 3. Validate shop matches
+      if (decoded.shopId != widget.shop.id) {
+        _showSnackBar('This QR code belongs to a different shop.');
+        return;
+      }
+
+      // 4. Find the product
+      final productProvider = Provider.of<ProductProvider>(
+        context,
+        listen: false,
+      );
+      final product = productProvider.products
+          .where((p) => p.id == decoded.productId)
+          .firstOrNull;
+
+      if (product == null) {
+        _showSnackBar('Product not found. It may have been deleted.');
+        return;
+      }
+
+      // 5. Find the batch with matching batchCode and available stock
+      final batches = await _productService.getActiveBatches(
+        widget.shop.id,
+        product.id,
+      );
+      final batch = batches
+          .where((b) => b.batchCode == decoded.batchCode && b.quantity > 0)
+          .firstOrNull;
+
+      if (batch == null) {
+        _showSnackBar(
+          'Batch "${decoded.batchCode}" for ${product.name} has no stock available.',
+        );
+        return;
+      }
+
+      // 6. Check if already in cart — if so increment quantity
+      final existingIndex = _cart.indexWhere(
+        (item) => item.batchId == batch.id,
+      );
+
+      if (existingIndex >= 0) {
+        final existing = _cart[existingIndex];
+        if (existing.quantity >= batch.quantity) {
+          _showSnackBar(
+            'Maximum stock (${batch.quantity}) reached for ${product.name} (${batch.batchCode}).',
+          );
+          return;
+        }
+        setState(() {
+          _cart[existingIndex] = CartItem(
+            productId: existing.productId,
+            productName: existing.productName,
+            batchId: existing.batchId,
+            batchCode: existing.batchCode,
+            quantity: existing.quantity + 1,
+            sellingPrice: existing.sellingPrice,
+            maxQuantity: batch.quantity,
+          );
+        });
+        _showSnackBar(
+          '${product.name} quantity increased to ${_cart[existingIndex].quantity}',
+          isError: false,
+        );
+      } else {
+        // 7. Add to cart with quantity 1
+        setState(() {
+          _cart.add(
+            CartItem(
+              productId: product.id,
+              productName: product.name,
+              batchId: batch.id,
+              batchCode: batch.batchCode,
+              quantity: 1,
+              sellingPrice: batch.sellingPrice,
+              maxQuantity: batch.quantity,
+            ),
+          );
+        });
+        _showSnackBar(
+          '${product.name} (${batch.batchCode}) added to cart',
+          isError: false,
+        );
+      }
+    } catch (e) {
+      _showSnackBar('Scan error: $e');
+    } finally {
+      if (mounted) setState(() => _isProcessingScan = false);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // MANUAL ADD PRODUCT
+  // ─────────────────────────────────────────────────────────────
+
+  Future<void> _addProductManually() async {
     final productProvider = Provider.of<ProductProvider>(
       context,
       listen: false,
@@ -61,11 +187,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
     // Step 1: pick product
     final product = await _showProductPicker(productProvider.products);
-    if (product == null) {
-      print('Product selection cancelled');
-      return;
-    }
-    print('Selected product: ${product.name} (${product.id})');
+    if (product == null) return;
 
     // Step 2: get available batches for this product
     final batches = await _getBatchesForProduct(product.id);
@@ -79,29 +201,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       );
       return;
     }
-    print('Found ${batches.length} batches');
 
     // Step 3: select batch (or auto-select if only one)
     BatchModel? batch;
     if (batches.length == 1) {
       batch = batches.first;
-      print('Only one batch, auto-selected: ${batch.batchCode}');
     } else {
       batch = await _showBatchPicker(batches);
-      if (batch == null) {
-        print('Batch selection cancelled');
-        return;
-      }
-      print('Selected batch: ${batch.batchCode}');
+      if (batch == null) return;
     }
 
     // Step 4: enter quantity
     final quantity = await _showQuantityDialog(batch.quantity);
-    if (quantity == null || quantity <= 0) {
-      print('Invalid quantity or cancelled');
-      return;
-    }
-    print('Quantity: $quantity');
+    if (quantity == null || quantity <= 0) return;
 
     // Step 5: add to cart
     setState(() {
@@ -113,11 +225,64 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           batchCode: batch.batchCode,
           quantity: quantity,
           sellingPrice: batch.sellingPrice,
+          maxQuantity: batch.quantity,
         ),
       );
     });
     _showSnackBar('${product.name} added to cart', isError: false);
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // INCREMENT / DECREMENT QUANTITY
+  // ─────────────────────────────────────────────────────────────
+
+  void _incrementQuantity(int index) {
+    if (index >= _cart.length) return;
+    final item = _cart[index];
+    // Check batch stock limit
+    if (item.quantity >= item.maxQuantity) {
+      _showSnackBar(
+        'Maximum stock reached (${item.maxQuantity}) for ${item.productName} (${item.batchCode}).',
+      );
+      return;
+    }
+    setState(() {
+      _cart[index] = CartItem(
+        productId: item.productId,
+        productName: item.productName,
+        batchId: item.batchId,
+        batchCode: item.batchCode,
+        quantity: item.quantity + 1,
+        sellingPrice: item.sellingPrice,
+        maxQuantity: item.maxQuantity,
+      );
+    });
+  }
+
+  void _decrementQuantity(int index) {
+    if (index >= _cart.length) return;
+    final item = _cart[index];
+    if (item.quantity <= 1) {
+      // Remove item when quantity reaches 0
+      setState(() => _cart.removeAt(index));
+      return;
+    }
+    setState(() {
+      _cart[index] = CartItem(
+        productId: item.productId,
+        productName: item.productName,
+        batchId: item.batchId,
+        batchCode: item.batchCode,
+        quantity: item.quantity - 1,
+        sellingPrice: item.sellingPrice,
+        maxQuantity: item.maxQuantity,
+      );
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────────────────────
 
   String _formatAmount(double amount) =>
       CurrencyFormatter.format(amount, widget.shop.currency);
@@ -238,7 +403,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // SAVE SALE
+  // ─────────────────────────────────────────────────────────────
+
   Future<void> _saveSale() async {
+    if (_isSaving) return; // Prevent double clicks
+
     if (_cart.isEmpty) {
       _showSnackBar('Add at least one item');
       return;
@@ -255,45 +426,140 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       return;
     }
 
-    final saleProvider = Provider.of<SaleProvider>(context, listen: false);
-    final result = await saleProvider.recordSale(
-      shopId: widget.shop.id,
-      customerId: _selectedCustomerId,
-      paymentMethodId: _selectedPaymentMethodId!,
-      paidAmount: paid,
-      items: _cart
-          .map(
-            (item) => (
-              batchId: item.batchId,
-              productId: item.productId,
-              productName: item.productName,
-              quantity: item.quantity,
-              sellingPrice: item.sellingPrice,
-            ),
-          )
-          .toList(),
-    );
+    // If paid amount is less than total, ask for confirmation
+    if (paid < _totalAmount) {
+      final confirmed = await _showShortPaymentConfirmation(paid);
+      if (confirmed != true) return;
+    }
 
-    if (!mounted) return;
+    setState(() => _isSaving = true);
 
-    if (result.success) {
-      final message = result.pendingSync
-          ? 'Sale saved offline — will sync when you\'re back online'
-          : 'Sale recorded successfully';
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SalesListScreen(
-            shop: widget.shop,
-            successMessage: message,
-          ),
-        ),
+    try {
+      final saleProvider = Provider.of<SaleProvider>(context, listen: false);
+      final result = await saleProvider.recordSale(
+        shopId: widget.shop.id,
+        customerId: _selectedCustomerId,
+        paymentMethodId: _selectedPaymentMethodId!,
+        paidAmount: paid,
+        items: _cart
+            .map(
+              (item) => (
+                batchId: item.batchId,
+                productId: item.productId,
+                productName: item.productName,
+                quantity: item.quantity,
+                sellingPrice: item.sellingPrice,
+              ),
+            )
+            .toList(),
       );
-    } else {
-      _showSnackBar(saleProvider.error ?? 'Failed to record sale');
-      saleProvider.clearError();
+
+      if (!mounted) return;
+
+      if (result.success) {
+        final message = result.pendingSync
+            ? 'Sale saved offline — will sync when you\'re back online'
+            : 'Sale recorded successfully';
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                SalesListScreen(shop: widget.shop, successMessage: message),
+          ),
+        );
+      } else {
+        _showSnackBar(saleProvider.error ?? 'Failed to record sale');
+        saleProvider.clearError();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Sale error: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
+
+  /// Shows a confirmation dialog when the customer pays less than the total.
+  /// Returns `true` if the user confirms they want to proceed with the short payment.
+  Future<bool?> _showShortPaymentConfirmation(double paid) async {
+    final unpaid = _totalAmount - paid;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 22),
+            SizedBox(width: 10),
+            Expanded(child: Text('Incomplete Payment')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'The amount paid is less than the total sale amount.',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            _confirmationRow('Sale Total', _formatAmount(_totalAmount)),
+            const SizedBox(height: 6),
+            _confirmationRow('Amount Paid', _formatAmount(paid)),
+            const SizedBox(height: 6),
+            _confirmationRow(
+              'Remaining Balance',
+              _formatAmount(unpaid),
+              valueColor: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _selectedCustomerId != null
+                  ? 'The remaining balance will be added to the customer\'s account.'
+                  : 'Select a customer to track the remaining balance as credit.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirm Sale'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _confirmationRow(String label, String value, {Color? valueColor}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: valueColor ?? Colors.deepPurple,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // BUILD
+  // ─────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +578,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
@@ -334,6 +603,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 children: [
+                  // ── Customer section ──
                   TransactionFormUi.sectionHeader(
                     icon: Icons.person_outline,
                     title: 'Customer',
@@ -366,6 +636,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
+
+                  // ── Cart section ──
                   TransactionFormUi.sectionHeader(
                     icon: Icons.shopping_cart_outlined,
                     title: 'Cart',
@@ -376,25 +648,18 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   if (_cart.isEmpty)
                     TransactionFormUi.emptyItemsState(
                       message:
-                          'Your cart is empty.\nTap "Add Product" to add items.',
+                          'Your cart is empty.\nTap "Add Product" or "Scan QR" to add items.',
                       icon: Icons.shopping_cart_outlined,
                     )
                   else
                     ..._cart.asMap().entries.map((entry) {
                       final idx = entry.key;
                       final item = entry.value;
-                      return TransactionFormUi.lineItemCard(
-                        title: item.productName,
-                        trailingAmount: _formatAmount(item.subtotal),
-                        chips: [
-                          'Batch ${item.batchCode}',
-                          'Qty ${item.quantity}',
-                          'Price ${_formatAmount(item.sellingPrice)}',
-                        ],
-                        onRemove: () => setState(() => _cart.removeAt(idx)),
-                      );
+                      return _buildCartItemCard(idx, item);
                     }),
                   const SizedBox(height: 20),
+
+                  // ── Payment section ──
                   TransactionFormUi.sectionHeader(
                     icon: Icons.account_balance_wallet_outlined,
                     title: 'Payment',
@@ -425,6 +690,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
+
+                  // ── Checkout section ──
                   TransactionFormUi.sectionHeader(
                     icon: Icons.receipt_long_outlined,
                     title: 'Checkout',
@@ -466,16 +733,102 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 ],
               ),
             ),
-            TransactionFormUi.bottomActionBar(
-              secondaryButton: TransactionFormUi.secondaryButton(
-                onPressed: _addProduct,
-                label: 'Add Product',
-                icon: Icons.add,
+
+            // ── Bottom action bar ──
+            // Using a custom layout to avoid overflow from multiple secondary buttons
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
               ),
-              primaryButton: TransactionFormUi.primaryButton(
-                onPressed: _saveSale,
-                label: 'Complete Sale',
-                icon: Icons.check_circle_outline,
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Top row: Scan QR + Add Product buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: _isProcessingScan
+                                  ? null
+                                  : _addFromScan,
+                              icon: const Icon(Icons.qr_code_scanner, size: 18),
+                              label: const Text('Scan QR'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.deepPurple,
+                                side: BorderSide(
+                                  color: Colors.deepPurple.shade200,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: _addProductManually,
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Add Product'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.deepPurple,
+                                side: BorderSide(
+                                  color: Colors.deepPurple.shade200,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Bottom row: Complete Sale button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSaving ? null : _saveSale,
+                        icon: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.check_circle_outline, size: 20),
+                        label: Text(
+                          _isSaving ? 'Processing...' : 'Complete Sale',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -483,7 +836,186 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       ),
     );
   }
+
+  /// Builds a cart item card with quantity stepper (‑ / +) and remove button.
+  /// The increment button is disabled/visually dimmed when max stock is reached.
+  Widget _buildCartItemCard(int index, CartItem item) {
+    final bool atMaxStock = item.quantity >= item.maxQuantity;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top row: product name + remove button
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.productName,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => setState(() => _cart.removeAt(index)),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.close, size: 18, color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+
+            // Batch & price info row
+            Row(
+              children: [
+                Icon(Icons.qr_code, size: 14, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  item.batchCode,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: atMaxStock
+                        ? Colors.orange.withValues(alpha: 0.1)
+                        : Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Avail: ${item.maxQuantity % 1 == 0 ? item.maxQuantity.toInt().toString() : item.maxQuantity.toString()}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: atMaxStock ? Colors.orange : Colors.green,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  _formatAmount(item.sellingPrice),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.deepPurple,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Quantity stepper + subtotal
+            Row(
+              children: [
+                // Decrement
+                _quantityButton(
+                  icon: Icons.remove,
+                  onTap: () => _decrementQuantity(index),
+                  color: item.quantity <= 1 ? Colors.red : Colors.deepPurple,
+                ),
+                const SizedBox(width: 10),
+                // Quantity display
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Text(
+                    item.quantity % 1 == 0
+                        ? item.quantity.toInt().toString()
+                        : item.quantity.toString(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Increment — dimmed & disabled when at max stock
+                _quantityButton(
+                  icon: Icons.add,
+                  onTap: atMaxStock ? null : () => _incrementQuantity(index),
+                  color: atMaxStock ? Colors.grey : Colors.deepPurple,
+                ),
+                const Spacer(),
+                // Subtotal
+                Text(
+                  _formatAmount(item.subtotal),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
+                  ),
+                ),
+              ],
+            ),
+            // Show "Max reached" hint when at stock limit
+            if (atMaxStock)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Max stock limit reached',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.orange[700],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _quantityButton({
+    required IconData icon,
+    required VoidCallback? onTap,
+    required Color color,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: color),
+      ),
+    );
+  }
 }
+
+// ─────────────────────────────────────────────────────────────
+// CART ITEM MODEL
+// ─────────────────────────────────────────────────────────────
 
 class CartItem {
   final String productId;
@@ -492,6 +1024,7 @@ class CartItem {
   final String batchCode;
   final double quantity;
   final double sellingPrice;
+  final double maxQuantity; // Maximum stock available in this batch
   double get subtotal => quantity * sellingPrice;
   CartItem({
     required this.productId,
@@ -500,5 +1033,6 @@ class CartItem {
     required this.batchCode,
     required this.quantity,
     required this.sellingPrice,
+    this.maxQuantity = 999, // Default high cap if not provided
   });
 }
