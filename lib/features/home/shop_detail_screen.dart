@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/models/shop_model.dart';
 import '../shops/providers/shop_provider.dart';
-import '../staff/screens/staff_list_screen.dart'; // adjust import
+import '../staff/screens/staff_list_screen.dart';
 import '../../features/backup/screens/backup_screen.dart';
 import '../shops/screens/edit_shop_screen.dart';
 
@@ -221,116 +221,201 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Shop Information Card
+              // Shop Information Card (Redesigned)
               Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Shop Information',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.storefront_outlined,
+                              color: Colors.deepPurple,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Shop Information',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Details & settings',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Status chip
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _shop.isActive
+                                  ? Colors.green.shade50
+                                  : Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: _shop.isActive
+                                    ? Colors.green.shade200
+                                    : Colors.orange.shade200,
+                              ),
+                            ),
+                            child: Text(
+                              _shop.isActive ? 'Active' : 'Inactive',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _shop.isActive
+                                    ? Colors.green.shade700
+                                    : Colors.orange.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const Divider(),
-                      _infoRow('Name', _shop.name),
+                      const Divider(height: 32),
+                      // Info rows with icons
+                      _infoRow(Icons.business_outlined, 'Name', _shop.name),
                       if (_shop.address != null)
-                        _infoRow('Address', _shop.address!),
-                      if (_shop.phone != null) _infoRow('Phone', _shop.phone!),
-                      _infoRow('Currency', _shop.currency),
-                      _infoRow('Owner ID', _shop.ownerId),
+                        _infoRow(
+                            Icons.location_on_outlined, 'Address', _shop.address!),
+                      if (_shop.phone != null)
+                        _infoRow(Icons.phone_outlined, 'Phone', _shop.phone!),
+                      _infoRow(Icons.attach_money, 'Currency', _shop.currency),
+                      _infoRow(Icons.person_outline, 'Owner ID', _shop.ownerId),
                       _infoRow(
+                        Icons.calendar_today_outlined,
                         'Created',
                         DateFormat('dd MMM yyyy').format(_shop.createdAt),
-                      ),
-                      _infoRow(
-                        'Status',
-                        _shop.isActive ? 'Active' : 'Inactive',
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              // Quick Actions Card
+              const SizedBox(height: 20),
+
+              // Quick Actions Card (only for owner)
               if (isOwner)
                 Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Quick Actions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.bolt_outlined,
+                                color: Colors.deepPurple,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Quick Actions',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const Divider(),
+                        const Divider(height: 32),
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
                           children: [
-                            if (isOwner)
-                              ElevatedButton.icon(
-                                onPressed: _editShop,
-                                icon: const Icon(Icons.edit),
-                                label: const Text('Edit Details'),
-                              ),
-                            if (isOwner)
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          OwnerInvitationsScreen(shop: _shop),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.mail_outline),
-                                label: const Text('View Invitations'),
-                              ),
-                            if (isOwner)
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          StaffListScreen(shop: _shop),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.people),
-                                label: const Text('Manage Staff'),
-                              ),
-                            if (isOwner)
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => BackupScreen(shop: _shop),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.backup),
-                                label: const Text('Backup & Restore'),
-                              ),
-                            if (isOwner && _shop.isActive)
-                              OutlinedButton.icon(
+                            _actionButton(
+                              onPressed: _editShop,
+                              icon: Icons.edit_outlined,
+                              label: 'Edit Details',
+                              color: Colors.deepPurple,
+                            ),
+                            _actionButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        OwnerInvitationsScreen(shop: _shop),
+                                  ),
+                                );
+                              },
+                              icon: Icons.mail_outline,
+                              label: 'Invitations',
+                              color: Colors.blue,
+                            ),
+                            _actionButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => StaffListScreen(shop: _shop),
+                                  ),
+                                );
+                              },
+                              icon: Icons.people_outline,
+                              label: 'Manage Staff',
+                              color: Colors.teal,
+                            ),
+                            _actionButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BackupScreen(shop: _shop),
+                                  ),
+                                );
+                              },
+                              icon: Icons.backup_outlined,
+                              label: 'Backup & Restore',
+                              color: Colors.orange,
+                            ),
+                            if (_shop.isActive)
+                              _actionButton(
                                 onPressed: _deleteShop,
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                  side: const BorderSide(color: Colors.red),
-                                ),
-                                icon: const Icon(Icons.delete_outline),
-                                label: const Text('Delete Shop'),
+                                icon: Icons.delete_outline,
+                                label: 'Delete Shop',
+                                color: Colors.red,
+                                outlined: true,
                               ),
                           ],
                         ),
@@ -345,24 +430,73 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 32,
+            child: Icon(icon, size: 18, color: Colors.grey.shade600),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 90,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: Colors.grey,
+                color: Colors.grey.shade700,
+                fontSize: 14,
               ),
             ),
           ),
-          Expanded(child: Text(value)),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _actionButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required Color color,
+    bool outlined = false,
+  }) {
+    if (outlined) {
+      return OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
+          side: BorderSide(color: color),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        ),
+      );
+    }
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        elevation: 0,
       ),
     );
   }
@@ -398,7 +532,14 @@ class _DeleteShopPasswordDialogState extends State<_DeleteShopPasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Delete Shop'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
+          const SizedBox(width: 8),
+          const Text('Delete Shop'),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -409,8 +550,9 @@ class _DeleteShopPasswordDialogState extends State<_DeleteShopPasswordDialog> {
               Text(
                 'You are about to deactivate "${widget.shopName}". '
                 'Shop data is kept but the shop will be hidden from your list.',
+                style: const TextStyle(fontSize: 14),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               const Text(
                 'Enter your account password to confirm you are the owner:',
                 style: TextStyle(fontWeight: FontWeight.w500),
@@ -449,7 +591,12 @@ class _DeleteShopPasswordDialogState extends State<_DeleteShopPasswordDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
           onPressed: _submit,
           child: const Text('Delete Shop'),
         ),

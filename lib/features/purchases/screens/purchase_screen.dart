@@ -506,8 +506,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                         },
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Required';
-                          if (double.tryParse(v) == null)
+                          if (double.tryParse(v) == null) {
                             return 'Invalid number';
+                          }
                           return null;
                         },
                       ),
