@@ -40,11 +40,19 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
     if (success) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Staff invited successfully'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Staff invited successfully'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Invitation failed'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(provider.error ?? 'Invitation failed'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       provider.clearError();
     }
@@ -53,39 +61,156 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Invite Staff')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email Address *'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Required';
-                  if (!v.contains('@') || !v.contains('.')) return 'Invalid email';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<MemberRole>(
-                initialValue: _selectedRole,
-                decoration: const InputDecoration(labelText: 'Role *'),
-                items: const [
-                  DropdownMenuItem(value: MemberRole.staff, child: Text('Staff')),
-                  DropdownMenuItem(value: MemberRole.owner, child: Text('Owner')),
+      appBar: AppBar(
+        title: const Text('Invite Staff'),
+        centerTitle: false,
+      ),
+      body: Container(
+        color: Colors.grey[50],
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  // Header card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.person_add_alt_1_outlined,
+                                color: Colors.deepPurple,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Invite Staff Member',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Send an invitation to join ${widget.shop.name}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 28),
+                        // Email field
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: 'Email Address *',
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Required';
+                            if (!v.contains('@') || !v.contains('.'))
+                              return 'Invalid email';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // Role dropdown
+                        DropdownButtonFormField<MemberRole>(
+                          initialValue: _selectedRole,
+                          decoration: InputDecoration(
+                            labelText: 'Role *',
+                            prefixIcon: const Icon(Icons.verified_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: MemberRole.staff,
+                              child: Text('Staff'),
+                            ),
+                            DropdownMenuItem(
+                              value: MemberRole.owner,
+                              child: Text('Owner'),
+                            ),
+                          ],
+                          onChanged: (val) =>
+                              setState(() => _selectedRole = val!),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Action button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _invite,
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send_outlined, size: 20),
+                      label: Text(_isLoading ? 'Sending...' : 'Send Invitation'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
                 ],
-                onChanged: (val) => setState(() => _selectedRole = val!),
               ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _invite,
-                child: _isLoading ? const CircularProgressIndicator() : const Text('Send Invitation'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

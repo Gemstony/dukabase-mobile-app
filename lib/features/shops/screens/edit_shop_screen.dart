@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/shop_model.dart';
+import '../../../core/widgets/transaction_form_ui.dart';
 import '../providers/shop_provider.dart';
 
 class EditShopScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
   late String _selectedCurrency;
   bool _isLoading = false;
 
-  final List<String> _currencies = ['USD', 'EUR', 'GBP', 'TZS', 'KES', 'NGN'];
+  final List<String> _currencies = ['TZS', 'USD', 'KES', 'NGN', 'EUR', 'GBP'];
 
   @override
   void initState() {
@@ -65,6 +66,7 @@ class _EditShopScreenState extends State<EditShopScreen> {
         SnackBar(
           content: Text(shopProvider.error ?? 'Update failed'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       shopProvider.clearError();
@@ -75,46 +77,79 @@ class _EditShopScreenState extends State<EditShopScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Shop')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Shop Name *'),
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          children: [
+            TransactionFormUi.sectionHeader(
+              icon: Icons.store_outlined,
+              title: 'Shop details',
+              subtitle: 'Update your shop information',
+            ),
+            TransactionFormUi.formCard(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Shop Name *',
+                    prefixIcon: Icons.business_outlined,
+                  ),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _addressController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Address (optional)',
+                    prefixIcon: Icons.location_on_outlined,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Phone (optional)',
+                    prefixIcon: Icons.phone_outlined,
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedCurrency,
+                  decoration: TransactionFormUi.fieldDecoration(
+                    context,
+                    label: 'Currency',
+                    prefixIcon: Icons.payments_outlined,
+                  ),
+                  items: _currencies
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) => setState(() {
+                    if (val != null) _selectedCurrency = val;
+                  }),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            TransactionFormUi.primaryButton(
+              onPressed: _isLoading ? null : _save,
+              label: 'Save Changes',
+              icon: _isLoading ? null : Icons.save_outlined,
+            ),
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Address'),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone'),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedCurrency,
-                decoration: const InputDecoration(labelText: 'Currency'),
-                items: _currencies
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (val) => setState(() => _selectedCurrency = val!),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _save,
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Save Changes'),
-              ),
-            ],
-          ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

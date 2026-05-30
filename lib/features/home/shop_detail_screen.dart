@@ -26,7 +26,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
     super.initState();
     _shop = widget.shop;
     if (!_shop.isActive) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _exitIfShopInactive());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _exitIfShopInactive(),
+      );
     }
   }
 
@@ -137,9 +139,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
       if (!verifyResult.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              verifyResult.error ?? 'Password verification failed',
-            ),
+            content: Text(verifyResult.error ?? 'Password verification failed'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -214,21 +214,30 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
             ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Shop Information Card (Redesigned)
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
+      body: Container(
+        color: Colors.grey[50],
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Shop Information Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -237,10 +246,10 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.deepPurple.shade50,
+                              color: Colors.deepPurple.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.storefront_outlined,
                               color: Colors.deepPurple,
                               size: 28,
@@ -299,12 +308,14 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                           ),
                         ],
                       ),
-                      const Divider(height: 32),
-                      // Info rows with icons
+                      const Divider(height: 28),
                       _infoRow(Icons.business_outlined, 'Name', _shop.name),
                       if (_shop.address != null)
                         _infoRow(
-                            Icons.location_on_outlined, 'Address', _shop.address!),
+                          Icons.location_on_outlined,
+                          'Address',
+                          _shop.address!,
+                        ),
                       if (_shop.phone != null)
                         _infoRow(Icons.phone_outlined, 'Phone', _shop.phone!),
                       _infoRow(Icons.attach_money, 'Currency', _shop.currency),
@@ -317,18 +328,24 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Quick Actions Card (only for owner)
-              if (isOwner)
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
+                // Quick Actions Card (only for owner)
+                if (isOwner)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -337,10 +354,12 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.deepPurple.shade50,
+                                color: Colors.deepPurple.withValues(
+                                  alpha: 0.08,
+                                ),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.bolt_outlined,
                                 color: Colors.deepPurple,
                                 size: 22,
@@ -358,7 +377,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                             ),
                           ],
                         ),
-                        const Divider(height: 32),
+                        const Divider(height: 28),
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
@@ -388,7 +407,8 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => StaffListScreen(shop: _shop),
+                                    builder: (_) =>
+                                        StaffListScreen(shop: _shop),
                                   ),
                                 );
                               },
@@ -422,8 +442,8 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                       ],
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -452,12 +472,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );
@@ -492,9 +507,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         elevation: 0,
       ),
@@ -572,9 +585,8 @@ class _DeleteShopPasswordDialogState extends State<_DeleteShopPasswordDialog> {
                           ? Icons.visibility_off
                           : Icons.visibility,
                     ),
-                    onPressed: () => setState(
-                      () => _obscurePassword = !_obscurePassword,
-                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
                 validator: (v) =>
