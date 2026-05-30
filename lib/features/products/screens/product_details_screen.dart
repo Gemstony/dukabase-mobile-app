@@ -302,25 +302,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Qty: ${batch.quantity}',
-                                    style: TextStyle(
-                                      color: Colors.grey[700],
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Expiry: ${batch.expiryDate != null ? DateFormat('MMM d, y').format(batch.expiryDate!) : 'N/A'}',
+                              Text(
+                                'Qty: ${batch.quantity}',
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 13,
+                                ),
+                              ),
+                              if (batch.expiryDate != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Text(
+                                    'Expiry: ${DateFormat('MMM d, y').format(batch.expiryDate!)}',
                                     style: TextStyle(
                                       color: Colors.red[400],
                                       fontSize: 13,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
                             ],
                           ),
                         ),
@@ -530,7 +529,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen>
   }
 
   /// Shows a bottom sheet with the batch QR code for viewing/scannning.
-  void _showBatchQrCode(BuildContext context, {
+  void _showBatchQrCode(
+    BuildContext context, {
     required BatchModel batch,
     required String qrData,
   }) {
@@ -567,18 +567,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen>
               const SizedBox(height: 8),
               Text(
                 'Batch: ${batch.batchCode}',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
               const SizedBox(height: 24),
               // QR Code
               Center(
-                child: QRCodeHelper.generateQrWidget(
-                  data: qrData,
-                  size: 220,
-                ),
+                child: QRCodeHelper.generateQrWidget(data: qrData, size: 220),
               ),
               const SizedBox(height: 16),
               Text(
