@@ -15,16 +15,16 @@ class PurchaseProvider extends ChangeNotifier {
 
   void loadPurchases(String shopId) {
     _isLoading = true;
-    notifyListeners();
+    if (hasListeners) notifyListeners();
     _purchaseService.getPurchases(shopId).listen((purchases) {
       _purchases = purchases;
       _isLoading = false;
       _error = null;
-      notifyListeners();
+      if (hasListeners) notifyListeners();
     }, onError: (error) {
       _error = error.toString();
       _isLoading = false;
-      notifyListeners();
+      if (hasListeners) notifyListeners();
     });
   }
 
@@ -46,7 +46,7 @@ class PurchaseProvider extends ChangeNotifier {
     })> items,
   }) async {
     _isLoading = true;
-    notifyListeners();
+    if (hasListeners) notifyListeners();
     final result = await _purchaseService.recordPurchase(
       shopId: shopId,
       supplierId: supplierId,
@@ -57,15 +57,16 @@ class PurchaseProvider extends ChangeNotifier {
       items: items,
     );
     _isLoading = false;
+    if (hasListeners) notifyListeners();
     if (!result.success) {
       _error = 'Failed to record purchase';
-      notifyListeners();
+      if (hasListeners) notifyListeners();
     }
     return result;
   }
 
   void clearError() {
     _error = null;
-    notifyListeners();
+    if (hasListeners) notifyListeners();
   }
 }
